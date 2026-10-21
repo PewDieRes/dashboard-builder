@@ -7,6 +7,7 @@ namespace DashboardBuilder\Tests\Integration;
 use DashboardBuilder\Domain\Dashboard;
 use DashboardBuilder\Infrastructure\Config;
 use DashboardBuilder\Infrastructure\DatabaseConnectionFactory;
+use DashboardBuilder\Infrastructure\SqlScriptRunner;
 use DashboardBuilder\Repository\PdoDashboardRepository;
 use DashboardBuilder\Tests\Unit\Service\LayoutValidatorTest;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +21,7 @@ final class PdoDashboardRepositoryTest extends TestCase
     {
         $projectRoot = dirname(__DIR__, 2);
         $this->connection = DatabaseConnectionFactory::create(Config::fromEnvironmentFile($projectRoot . '/.env'));
-        $this->recreateSchema($projectRoot . '/database/schema.sql');
+        (new SqlScriptRunner($this->connection))->runFile($projectRoot . '/database/schema.sql');
         $this->dashboardRepository = new PdoDashboardRepository($this->connection);
     }
 
@@ -91,16 +92,5 @@ final class PdoDashboardRepositoryTest extends TestCase
     {
         self::assertNull($this->dashboardRepository->findById(999999));
         self::assertFalse($this->dashboardRepository->exists(999999));
-    }
-
-    private function recreateSchema(string $schemaFilePath): void
-    {
-        $statements = preg_split('/;\s*$/m', (string) file_get_contents($schemaFilePath));
-
-        foreach ($statements as $statement) {
-            if (trim($statement) !== '') {
-                $this->connection->exec($statement);
-            }
-        }
     }
 }
