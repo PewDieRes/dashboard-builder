@@ -14,6 +14,8 @@ MySQL and restored on reload.
 - Image element: upload (PNG, JPEG, GIF, WEBP up to 5 MB) and replace.
 - Chart element: bar or line (Chart.js), editable title, labels and values, plus **Generate random data** for a
   dynamically generated graph. New charts start with generated data.
+- Live chart data: link a chart to a server-generated metric (monthly revenue, daily visitors, signups by channel) and
+  the PHP API produces fresh data on every load. The saved labels and values stay as the fallback.
 - Every element is draggable and resizable inside its section (positions stored as percentages, so elements scale with the section).
 - Autosave (debounced, never overlapping) with a save status indicator and a manual Save button.
 - Multiple dashboards: switch between them or create new ones; the open dashboard is kept in the URL (`?dashboard=1`).
@@ -89,6 +91,7 @@ uploaded images live on the container disk, so they are lost on redeploy.
    text is focused: **B** (bold), **I** (italic) or the **Size** dropdown (font size).
 5. Image: **Replace** uploads a new image.
 6. Chart: **Edit chart** (or double-click) to change type, title and data, or press **Generate random data**.
+   Pick a **Data source** to link the chart to a live server metric (it shows a **Live** badge); choose **Manual data** to edit the values yourself again.
 7. Changes save automatically; reload the page to see the layout restored from MySQL.
 
 ## API
@@ -101,6 +104,8 @@ All responses are JSON. Errors use `{ "error": { "code", "message", "details" } 
 | POST | `/api/dashboards` | Create `{ name }` | 201 |
 | GET | `/api/dashboards/{id}` | Full layout tree | 200 |
 | PUT | `/api/dashboards/{id}/layout` | Replace name, sections and elements atomically | 200 |
+| GET | `/api/metrics` | List live metrics `{ metrics: [{ key, title, chartType }] }` | 200 |
+| GET | `/api/metrics/{metricKey}` | Freshly generated series `{ key, title, chartType, labels, values, generatedAt }` | 200 |
 | POST | `/api/images` | Multipart upload, field `image` | 201 `{ imageUrl }` |
 
 Error codes: `invalid_json` (400), `not_found` (404), `method_not_allowed` (405), `validation_failed` (422, `details` maps
@@ -140,9 +145,10 @@ public/                 web root
   uploads/              uploaded images
 src/
   Http/                 Request, JsonResponse, Router, exceptions, ApiErrorHandler
-  Controller/           DashboardController, ImageUploadController
+  Controller/           DashboardController, ImageUploadController, MetricController
   Domain/               Dashboard, Section, Element, ElementType, DashboardSummary
   Repository/           DashboardRepositoryInterface, PdoDashboardRepository
+  Metrics/              MetricGenerator, MetricRegistry, MetricSeries and one generator per metric
   Service/              DashboardService, LayoutValidator, HtmlSanitizer, ImageUploadService
   Infrastructure/       Config, DatabaseConnectionFactory
 bootstrap.php           composition root (wires dependencies and routes)
