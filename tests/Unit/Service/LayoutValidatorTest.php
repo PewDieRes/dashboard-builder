@@ -54,6 +54,13 @@ final class LayoutValidatorTest extends TestCase
         self::assertArrayHasKey('sections.0.columnSpan', $this->layoutValidator->validate($layout));
     }
 
+    public function testGridRowBeyondDatabaseRangeIsReported(): void
+    {
+        $layout = self::validLayout();
+        $layout['sections'][0]['gridRow'] = 70000;
+        self::assertArrayHasKey('sections.0.gridRow', $this->layoutValidator->validate($layout));
+    }
+
     public function testElementOutsideSectionIsReported(): void
     {
         $layout = self::validLayout();

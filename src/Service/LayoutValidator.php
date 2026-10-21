@@ -12,6 +12,7 @@ final class LayoutValidator
     private const MAXIMUM_SECTIONS = 50;
     private const MAXIMUM_ELEMENTS_PER_SECTION = 50;
     private const GRID_COLUMN_COUNT = 12;
+    private const MAXIMUM_GRID_ROW = 10000;
     private const MAXIMUM_ROW_SPAN = 200;
     private const MAXIMUM_Z_INDEX = 1000;
     private const PERCENT_TOLERANCE = 0.01;
@@ -100,8 +101,8 @@ final class LayoutValidator
         } elseif (!isset($errors["$path.gridColumn"]) && $gridColumn + $columnSpan - 1 > self::GRID_COLUMN_COUNT) {
             $errors["$path.columnSpan"] = 'Section extends beyond the 12 column grid';
         }
-        if (!$this->isIntegerWithin($section['gridRow'] ?? null, 1, PHP_INT_MAX)) {
-            $errors["$path.gridRow"] = 'Grid row must be an integer of at least 1';
+        if (!$this->isIntegerWithin($section['gridRow'] ?? null, 1, self::MAXIMUM_GRID_ROW)) {
+            $errors["$path.gridRow"] = 'Grid row must be an integer from 1 to ' . self::MAXIMUM_GRID_ROW;
         }
         if (!$this->isIntegerWithin($section['rowSpan'] ?? null, 1, self::MAXIMUM_ROW_SPAN)) {
             $errors["$path.rowSpan"] = 'Row span must be an integer from 1 to 200';
