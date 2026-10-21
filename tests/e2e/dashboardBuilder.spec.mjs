@@ -103,7 +103,7 @@ test.describe('rich text', () => {
 test.describe('elements', () => {
     test('adds text, image and chart elements to the selected section', async ({ page, request }) => {
         await page.locator('.section').first().locator('.section-body').click({ position: { x: 5, y: 5 } });
-        for (const elementLabel of ['Add text', 'Add image', 'Add chart']) {
+        for (const elementLabel of ['Add text', 'Add image', 'Add bar chart']) {
             await page.getByRole('button', { name: elementLabel }).click();
         }
         await expect(page.locator('.section').first().locator('.element-frame')).toHaveCount(4);
@@ -303,5 +303,211 @@ test.describe('responsive', () => {
         const hasHorizontalScroll = await page.evaluate(() =>
             document.documentElement.scrollWidth > document.documentElement.clientWidth);
         expect(hasHorizontalScroll).toBe(false);
+    });
+});
+
+function elementFrameInSection(page, sectionIndex) {
+    return page.locator('.section').nth(sectionIndex).locator('.element-frame');
+}
+
+test.describe('inspector', () => {
+    test('shows the dashboard summary when nothing is selected', async ({ page }) => {
+        const inspector = page.locator('#inspector');
+        await expect(inspector.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+        await expect(inspector).toContainText('Sections');
+        await expect(inspector.getByLabel('Name', { exact: true })).toBeVisible();
+    });
+
+    test('width input resizes the element on the canvas and persists', async ({ page, request }) => {
+        const frame = elementFrameInSection(page, 0);
+        await frame.click({ position: { x: 4, y: 4 } });
+        await page.locator('#inspector').getByLabel('Width', { exact: true }).fill('30');
+        await expect.poll(() => frame.evaluate(node => node.style.width)).toBe('30%');
+        await expectSavedLayout(request, dashboard => dashboard.sections[0].elements[0].widthPercent === 30);
+    });
+
+    test('clamps an out-of-range size to the section', async ({ page, request }) => {
+        await elementFrameInSection(page, 0).click({ position: { x: 4, y: 4 } });
+        const widthInput = page.locator('#inspector').getByLabel('Width', { exact: true });
+        await widthInput.fill('500');
+        await widthInput.blur();
+        await expect(widthInput).toHaveValue('100');
+        await expectSavedLayout(request, dashboard => dashboard.sections[0].elements[0].widthPercent === 100);
+    });
+
+    test('section column and span inputs persist', async ({ page, request }) => {
+        await page.locator('.section').nth(2).locator('.section-title-input').click();
+        const inspector = page.locator('#inspector');
+        await inspector.getByLabel('Column', { exact: true }).fill('3');
+        await inspector.getByLabel('Columns', { exact: true }).fill('5');
+        await expectSavedLayout(request, dashboard => {
+            const section = dashboard.sections[2];
+            return section.gridColumn === 3 && section.columnSpan === 5;
+        });
+    });
+
+    test('section title edited in the inspector updates the canvas', async ({ page, request }) => {
+        await page.locator('.section').first().locator('.section-title-input').click();
+        await page.locator('#inspector').getByLabel('Title', { exact: true }).fill('From inspector');
+        await expect(page.locator('.section').first().getByLabel('Section title')).toHaveValue('From inspector');
+        await expectSavedLayout(request, dashboard => dashboard.sections[0].title === 'From inspector');
+    });
+
+    test('arranges an element with bring forward', async ({ page, request }) => {
+        await elementFrameInSection(page, 0).click({ position: { x: 4, y: 4 } });
+        await page.getByRole('button', { name: 'Bring forward' }).click();
+        await expectSavedLayout(request, dashboard => dashboard.sections[0].elements[0].zIndex === 2);
+    });
+
+    test('deletes the selected element from the inspector', async ({ page, request }) => {
+        await elementFrameInSection(page, 0).click({ position: { x: 4, y: 4 } });
+        await page.locator('#inspector').getByRole('button', { name: 'Delete element' }).click();
+        await expect(elementFrameInSection(page, 0)).toHaveCount(0);
+        await expectSavedLayout(request, dashboard => dashboard.sections[0].elements.length === 0);
+    });
+
+    test('chart inspector switches the chart type and persists it', async ({ page, request }) => {
+        await elementFrameInSection(page, 1).click({ position: { x: 4, y: 4 } });
+        await page.locator('#inspector').getByRole('button', { name: 'Line', exact: true }).click();
+        await expectSavedLayout(request, dashboard => dashboard.sections[1].elements[0].content.chartType === 'line');
+        await expect(page.locator('.chart-element canvas')).toHaveCount(1);
+    });
+
+    test('chart inspector links a data source and edits the title', async ({ page, request }) => {
+        await elementFrameInSection(page, 1).click({ position: { x: 4, y: 4 } });
+        const inspector = page.locator('#inspector');
+        await inspector.getByLabel('Title', { exact: true }).fill('Visitors');
+        await inspector.getByLabel('Data source').selectOption('daily-visitors');
+        await expectSavedLayout(request, dashboard => {
+            const content = dashboard.sections[1].elements[0].content;
+            return content.title === 'Visitors' && content.dataSource === 'daily-visitors' && content.labels.length === 7;
+        });
+        await expect(page.locator('.chart-live-badge')).toBeVisible();
+    });
+
+    test('image inspector edits the alt text', async ({ page, request }) => {
+        await elementFrameInSection(page, 2).click({ position: { x: 4, y: 4 } });
+        await page.locator('#inspector').getByLabel('Alt text').fill('Company logo');
+        await expect(page.locator('.image-element img')).toHaveAttribute('alt', 'Company logo');
+        await expectSavedLayout(request, dashboard => dashboard.sections[2].elements[0].content.altText === 'Company logo');
+    });
+
+    test('text inspector hints until the text is focused', async ({ page }) => {
+        await page.getByRole('tab', { name: 'Layers' }).click();
+        await page.locator('.layer-row-element', { hasText: 'Editable note' }).click();
+        const inspector = page.locator('#inspector');
+        await expect(inspector.getByText('Click into the text to format it')).toBeVisible();
+        await page.locator('.text-element').click();
+        await expect(inspector.getByRole('button', { name: 'Bold' })).toBeVisible();
+        await expect(inspector.getByText('Click into the text to format it')).toBeHidden();
+    });
+});
+
+test.describe('add panel', () => {
+    test('adding text with no section selected creates a section first', async ({ page, request }) => {
+        await page.keyboard.press('Escape');
+        await page.getByRole('button', { name: 'Add text' }).click();
+        await expect(page.locator('.section')).toHaveCount(4);
+        await expect(page.locator('.section').nth(3).locator('.element-frame')).toHaveCount(1);
+        await expectSavedLayout(request, dashboard =>
+            dashboard.sections.length === 4 && dashboard.sections[3].elements[0].elementType === 'text');
+    });
+
+    test('adds a line chart with the line type', async ({ page, request }) => {
+        await page.locator('.section').nth(2).locator('.section-title-input').click();
+        await page.getByRole('button', { name: 'Add line chart' }).click();
+        await expectSavedLayout(request, dashboard => {
+            const chart = dashboard.sections[2].elements.find(element => element.elementType === 'chart');
+            return chart?.content.chartType === 'line';
+        });
+    });
+});
+
+test.describe('layers', () => {
+    test('clicking a layer selects the element on the canvas and the reverse', async ({ page }) => {
+        await page.getByRole('tab', { name: 'Layers' }).click();
+        await page.locator('.layer-row-element', { hasText: 'Revenue' }).click();
+        await expect(elementFrameInSection(page, 1)).toHaveClass(/is-selected/);
+
+        await elementFrameInSection(page, 2).click({ position: { x: 4, y: 4 } });
+        await expect(page.locator('.layer-row.is-selected')).toHaveCount(1);
+        await expect(page.locator('.layer-row.is-selected')).toContainText('Sample banner');
+    });
+
+    test('clicking a section layer selects the section', async ({ page }) => {
+        await page.getByRole('tab', { name: 'Layers' }).click();
+        await page.locator('.layer-row-section', { hasText: 'Logo' }).click();
+        await expect(page.locator('.section').nth(2)).toHaveClass(/is-selected/);
+        await expect(page.locator('#inspector').getByRole('heading', { name: 'Section', exact: true })).toBeVisible();
+    });
+});
+
+test.describe('device modes', () => {
+    test('mobile mode stacks sections inside a narrow frame', async ({ page }) => {
+        await page.getByRole('button', { name: 'Mobile', exact: true }).click();
+        const frame = page.locator('#dashboard-canvas');
+        await expect(frame).toHaveClass(/is-stacked/);
+        expect((await frame.boundingBox()).width).toBeLessThanOrEqual(390);
+        const sectionBoxes = await page.locator('.section').evaluateAll(sections =>
+            sections.map(section => section.getBoundingClientRect().toJSON()));
+        for (let sectionIndex = 1; sectionIndex < sectionBoxes.length; sectionIndex += 1) {
+            expect(sectionBoxes[sectionIndex].top).toBeGreaterThanOrEqual(sectionBoxes[sectionIndex - 1].bottom - 1);
+        }
+        await page.getByRole('button', { name: 'Desktop', exact: true }).click();
+        await expect(frame).not.toHaveClass(/is-stacked/);
+    });
+
+    test('tablet mode keeps the frame at tablet width', async ({ page }) => {
+        await page.getByRole('button', { name: 'Tablet', exact: true }).click();
+        expect((await page.locator('#dashboard-canvas').boundingBox()).width).toBeLessThanOrEqual(768);
+    });
+});
+
+test.describe('preview', () => {
+    test('hides the sidebars, blocks dragging and makes text read-only', async ({ page, request }) => {
+        await page.getByRole('button', { name: 'Preview', exact: true }).click();
+        await expect(page.locator('#sidebar')).toBeHidden();
+        await expect(page.locator('#inspector')).toBeHidden();
+        await expect(page.locator('.text-element')).toHaveAttribute('contenteditable', 'false');
+
+        const box = await elementFrameInSection(page, 0).boundingBox();
+        await dragFromPoint(page, box.x + box.width / 2, box.y + box.height / 2, 120, 60);
+        await page.waitForTimeout(2_000);
+        const [element] = (await fetchDashboard(request, dashboardId)).sections[0].elements;
+        expect([element.offsetXPercent, element.offsetYPercent]).toEqual([10, 10]);
+
+        await page.getByRole('button', { name: 'Preview', exact: true }).click();
+        await expect(page.locator('#sidebar')).toBeVisible();
+        await expect(page.locator('.text-element')).toHaveAttribute('contenteditable', 'true');
+    });
+});
+
+test.describe('keyboard shortcuts', () => {
+    test('Delete removes the selected element', async ({ page, request }) => {
+        await elementFrameInSection(page, 2).click({ position: { x: 4, y: 4 } });
+        await page.keyboard.press('Delete');
+        await expect(elementFrameInSection(page, 2)).toHaveCount(0);
+        await expectSavedLayout(request, dashboard => dashboard.sections[2].elements.length === 0);
+    });
+
+    test('Delete removes a selected section when no element is selected', async ({ page, request }) => {
+        await page.locator('.section').nth(2).locator('.section-header').click({ position: { x: 2, y: 2 } });
+        await page.keyboard.press('Delete');
+        await expect(page.locator('.section')).toHaveCount(2);
+        await expectSavedLayout(request, dashboard => dashboard.sections.length === 2);
+    });
+
+    test('Delete inside a text field does not remove the selection', async ({ page }) => {
+        await page.locator('.section').first().getByLabel('Section title').click();
+        await page.keyboard.press('Delete');
+        await expect(page.locator('.section')).toHaveCount(3);
+    });
+
+    test('Escape clears the selection', async ({ page }) => {
+        await elementFrameInSection(page, 2).click({ position: { x: 4, y: 4 } });
+        await expect(page.locator('#dashboard-canvas .is-selected')).toHaveCount(1);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#dashboard-canvas .is-selected')).toHaveCount(0);
+        await expect(page.locator('#inspector')).toContainText('Overview');
     });
 });
