@@ -26,6 +26,10 @@ export class RichTextToolbar {
         });
     }
 
+    mountInto(hostNode) {
+        hostNode.prepend(this.#rootNode);
+    }
+
     attachTo(editableNode) {
         this.#attachedNode = editableNode;
         this.#rootNode.hidden = false;

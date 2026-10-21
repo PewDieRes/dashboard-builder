@@ -17,7 +17,7 @@ export class DashboardCanvas {
         this.#layoutStore = layoutStore;
         this.#dragResizeController = dragResizeController;
         this.#sectionView = new SectionView({ layoutStore, rendererRegistry, dragResizeController, apiClient, notifier });
-        layoutStore.addEventListener('change', event => this.#handleChange(event.detail.reason));
+        layoutStore.addEventListener('change', event => this.#handleChange(event.detail));
         for (const pressableNode of [rootNode, workspaceNode]) {
             pressableNode.addEventListener('pointerdown', event => this.#clearSelectionOnBackgroundPress(event));
         }
@@ -25,13 +25,17 @@ export class DashboardCanvas {
         this.#rootNode.replaceChildren(createNode('p', { className: 'canvas-empty-state', text: 'Loading dashboard…' }));
     }
 
-    #handleChange(reason) {
+    #handleChange({ reason, sectionClientId, elementClientId }) {
         if (reason === 'load' || reason === 'structure') {
             this.#renderAll();
         } else if (reason === 'selection') {
             this.#applySelection();
         } else if (reason === 'geometry') {
-            this.#refreshSectionPlacements();
+            this.#refreshGeometry();
+        } else if (reason === 'content') {
+            this.#syncSectionTitles();
+        } else if (reason === 'element-content') {
+            this.#rerenderElement(sectionClientId, elementClientId);
         }
     }
 
@@ -69,10 +73,25 @@ export class DashboardCanvas {
         }
     }
 
-    #refreshSectionPlacements() {
+    #refreshGeometry() {
         for (const section of this.#layoutStore.getSections()) {
-            this.#sectionView.applyPlacement(this.#sectionNodes.get(section.clientId), section);
+            this.#sectionView.refreshGeometry(this.#sectionNodes.get(section.clientId), section);
         }
+    }
+
+    #syncSectionTitles() {
+        for (const section of this.#layoutStore.getSections()) {
+            this.#sectionView.syncTitle(this.#sectionNodes.get(section.clientId), section);
+        }
+    }
+
+    #rerenderElement(sectionClientId, elementClientId) {
+        this.#sectionView.rerenderElement(
+            this.#sectionNodes.get(sectionClientId),
+            this.#layoutStore.findSection(sectionClientId),
+            this.#layoutStore.findElement(sectionClientId, elementClientId),
+        );
+        this.#applySelection();
     }
 
     #clearSelectionOnBackgroundPress(event) {

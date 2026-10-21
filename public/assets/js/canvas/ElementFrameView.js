@@ -18,6 +18,11 @@ export class ElementFrameView {
         this.#notifier = notifier;
     }
 
+    applyGeometry(frameNode, element) {
+        applyBoxStyle(frameNode, element);
+        frameNode.style.zIndex = String(element.zIndex);
+    }
+
     /** Returns the frame node and a destroy function that releases renderer and interaction resources. */
     render(sectionClientId, element, sectionBodyNode) {
         const dragHandleNode = createNode('span', {
@@ -36,8 +41,7 @@ export class ElementFrameView {
             attributes: { 'data-element-id': element.clientId },
         }, [dragHandleNode, deleteButtonNode, contentNode, ...createSelectionHandleNodes()]);
 
-        applyBoxStyle(frameNode, element);
-        frameNode.style.zIndex = String(element.zIndex);
+        this.applyGeometry(frameNode, element);
         frameNode.addEventListener('pointerdown', () => {
             this.#layoutStore.select(sectionClientId, element.clientId);
         });

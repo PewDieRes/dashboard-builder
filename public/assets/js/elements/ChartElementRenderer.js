@@ -1,5 +1,7 @@
 import { createNode } from '../dom/createNode.js';
 
+const ACCENT_COLOR_VARIABLE = '--color-accent';
+
 export class ChartElementRenderer {
     #chartEditorDialog;
 
@@ -19,20 +21,17 @@ export class ChartElementRenderer {
             text: 'Edit chart',
             attributes: { type: 'button' },
         });
-        const liveBadgeNode = createNode('span', { className: 'chart-live-badge', text: 'Live' });
-        liveBadgeNode.hidden = !element.content.dataSource;
-        const wrapperNode = createNode('div', { className: 'chart-element' }, [liveBadgeNode, editButtonNode, canvasHolderNode]);
+        const wrapperNode = createNode('div', { className: 'chart-element' }, [editButtonNode, canvasHolderNode]);
+        if (element.content.dataSource) {
+            wrapperNode.prepend(createNode('span', { className: 'chart-live-badge', text: 'Live' }));
+        }
         containerNode.append(wrapperNode);
 
-        const chartHandle = {
-            chart: this.#createChart(canvasNode, element.content),
-            liveBadgeNode,
-            isDestroyed: false,
-        };
+        const chartHandle = { chart: this.#createChart(canvasNode, element.content), isDestroyed: false };
         const resizeObserver = new ResizeObserver(() => chartHandle.chart.resize());
         resizeObserver.observe(canvasHolderNode);
 
-        const openEditor = () => this.#editContent(chartHandle, canvasNode, element, context);
+        const openEditor = () => this.#editContent(element, context);
         editButtonNode.addEventListener('click', openEditor);
         wrapperNode.addEventListener('dblclick', openEditor);
 
@@ -48,11 +47,17 @@ export class ChartElementRenderer {
     }
 
     #createChart(canvasNode, content) {
+        const accentColor = getComputedStyle(document.documentElement).getPropertyValue(ACCENT_COLOR_VARIABLE).trim();
         return new window.Chart(canvasNode, {
             type: content.chartType,
             data: {
                 labels: content.labels,
-                datasets: [{ label: content.title, data: content.values }],
+                datasets: [{
+                    label: content.title,
+                    data: content.values,
+                    backgroundColor: accentColor,
+                    borderColor: accentColor,
+                }],
             },
             options: { responsive: true, maintainAspectRatio: false, animation: false },
         });
@@ -91,25 +96,16 @@ export class ChartElementRenderer {
         this.#updateChartInPlace(chartHandle.chart, liveContent);
     }
 
-    async #editContent(chartHandle, canvasNode, element, context) {
+    async #editContent(element, context) {
         const newContent = await this.#chartEditorDialog.open(element.content);
-        if (!newContent) {
-            return;
+        if (newContent) {
+            context.layoutStore.updateElement(
+                context.sectionClientId,
+                context.elementClientId,
+                { content: newContent },
+                'element-content',
+            );
         }
-        const previousChartType = element.content.chartType;
-        chartHandle.liveBadgeNode.hidden = !newContent.dataSource;
-        context.layoutStore.updateElement(
-            context.sectionClientId,
-            context.elementClientId,
-            { content: newContent },
-            'content',
-        );
-        if (newContent.chartType !== previousChartType) {
-            chartHandle.chart.destroy();
-            chartHandle.chart = this.#createChart(canvasNode, newContent);
-            return;
-        }
-        this.#updateChartInPlace(chartHandle.chart, newContent);
     }
 
     #updateChartInPlace(chart, content) {

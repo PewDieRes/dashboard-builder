@@ -7,6 +7,7 @@ export class SectionView {
     #layoutStore;
     #dragResizeController;
     #elementFrameView;
+    #frameHandlesBySection = new Map();
 
     constructor(dependencies) {
         this.#layoutStore = dependencies.layoutStore;
@@ -45,13 +46,18 @@ export class SectionView {
 
         this.applyPlacement(sectionNode, section);
         this.#bindSectionEvents(sectionNode, section, titleInputNode, deleteButtonNode);
-        const destroyFrames = section.elements.map(element => this.#renderFrame(section, element, bodyNode));
+        const frameHandles = new Map();
+        this.#frameHandlesBySection.set(section.clientId, frameHandles);
+        for (const element of section.elements) {
+            this.#renderFrame(section, element, bodyNode, frameHandles);
+        }
         this.#dragResizeController.attachSection(sectionNode, section.clientId, gridNode);
 
         return {
             node: sectionNode,
             destroy: () => {
-                destroyFrames.forEach(destroyFrame => destroyFrame());
+                frameHandles.forEach(frameHandle => frameHandle.destroy());
+                this.#frameHandlesBySection.delete(section.clientId);
                 this.#dragResizeController.detach(sectionNode);
             },
         };
@@ -64,10 +70,36 @@ export class SectionView {
         sectionNode.style.order = String(gridRow * 100 + gridColumn);
     }
 
-    #renderFrame(section, element, bodyNode) {
-        const { node, destroy } = this.#elementFrameView.render(section.clientId, element, bodyNode);
-        bodyNode.append(node);
-        return destroy;
+    refreshGeometry(sectionNode, section) {
+        this.applyPlacement(sectionNode, section);
+        const frameHandles = this.#frameHandlesBySection.get(section.clientId);
+        for (const element of section.elements) {
+            this.#elementFrameView.applyGeometry(frameHandles.get(element.clientId).node, element);
+        }
+    }
+
+    syncTitle(sectionNode, section) {
+        const titleInputNode = sectionNode.querySelector('.section-title-input');
+        if (titleInputNode.value !== section.title) {
+            titleInputNode.value = section.title;
+        }
+    }
+
+    /** Redraws a single element frame in place, keeping its position among its siblings. */
+    rerenderElement(sectionNode, section, element) {
+        const frameHandles = this.#frameHandlesBySection.get(section.clientId);
+        const previousHandle = frameHandles.get(element.clientId);
+        previousHandle.destroy();
+        const bodyNode = sectionNode.querySelector('.section-body');
+        const replacementHandle = this.#elementFrameView.render(section.clientId, element, bodyNode);
+        previousHandle.node.replaceWith(replacementHandle.node);
+        frameHandles.set(element.clientId, replacementHandle);
+    }
+
+    #renderFrame(section, element, bodyNode, frameHandles) {
+        const frameHandle = this.#elementFrameView.render(section.clientId, element, bodyNode);
+        bodyNode.append(frameHandle.node);
+        frameHandles.set(element.clientId, frameHandle);
     }
 
     #bindSectionEvents(sectionNode, section, titleInputNode, deleteButtonNode) {

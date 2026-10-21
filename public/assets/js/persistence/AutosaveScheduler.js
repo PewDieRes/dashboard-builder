@@ -1,4 +1,4 @@
-const SAVED_REASONS = new Set(['structure', 'geometry', 'content', 'rename']);
+const SAVED_REASONS = new Set(['structure', 'geometry', 'content', 'element-content', 'rename']);
 
 export class AutosaveScheduler {
     #layoutStore;

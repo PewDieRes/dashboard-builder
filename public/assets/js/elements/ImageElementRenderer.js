@@ -1,21 +1,21 @@
 import { createNode } from '../dom/createNode.js';
-
-const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-const MAXIMUM_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+import { ImageUploader } from './ImageUploader.js';
 
 export class ImageElementRenderer {
-    render(containerNode, element, context) {
-        this.#renderContent(containerNode, element, context);
-        return () => containerNode.replaceChildren();
+    #imageUploader;
+
+    constructor(imageUploader) {
+        this.#imageUploader = imageUploader;
     }
 
-    #renderContent(containerNode, element, context) {
-        const fileInputNode = this.#createFileInput(containerNode, element, context);
+    render(containerNode, element, context) {
+        const fileInputNode = this.#createFileInput(element, context);
         const { imageUrl, altText } = element.content;
         const contentNode = imageUrl
             ? this.#createImageView(imageUrl, altText, fileInputNode)
             : this.#createEmptyState(fileInputNode);
         containerNode.replaceChildren(contentNode, fileInputNode);
+        return () => containerNode.replaceChildren();
     }
 
     #createImageView(imageUrl, altText, fileInputNode) {
@@ -42,47 +42,23 @@ export class ImageElementRenderer {
         return uploadButtonNode;
     }
 
-    #createFileInput(containerNode, element, context) {
+    #createFileInput(element, context) {
         const fileInputNode = createNode('input', {
-            attributes: { type: 'file', accept: ALLOWED_MIME_TYPES.join(','), hidden: '' },
+            attributes: { type: 'file', accept: ImageUploader.acceptedMimeTypes, hidden: '' },
         });
         fileInputNode.addEventListener('change', async () => {
             const [file] = fileInputNode.files;
-            if (file) {
-                await this.#uploadFile(file, containerNode, element, context);
-            }
             fileInputNode.value = '';
+            const imageUrl = file ? await this.#imageUploader.upload(file) : null;
+            if (imageUrl) {
+                context.layoutStore.updateElement(
+                    context.sectionClientId,
+                    context.elementClientId,
+                    { content: { ...element.content, imageUrl, altText: file.name } },
+                    'element-content',
+                );
+            }
         });
         return fileInputNode;
-    }
-
-    async #uploadFile(file, containerNode, element, context) {
-        const rejectionMessage = this.#findRejectionMessage(file);
-        if (rejectionMessage) {
-            context.notifier.error(rejectionMessage);
-            return;
-        }
-        try {
-            const { imageUrl } = await context.apiClient.uploadImage(file);
-            context.layoutStore.updateElement(
-                context.sectionClientId,
-                context.elementClientId,
-                { content: { imageUrl, altText: file.name } },
-                'content',
-            );
-            this.#renderContent(containerNode, element, context);
-        } catch (apiError) {
-            context.notifier.error(apiError.message);
-        }
-    }
-
-    #findRejectionMessage(file) {
-        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-            return 'Only PNG, JPEG, GIF and WEBP images are supported.';
-        }
-        if (file.size > MAXIMUM_FILE_SIZE_BYTES) {
-            return 'Image must be 5 MB or smaller.';
-        }
-        return null;
     }
 }

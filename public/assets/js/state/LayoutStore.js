@@ -75,7 +75,7 @@ export class LayoutStore extends EventTarget {
 
     updateElement(sectionClientId, elementClientId, changedFields, reason = 'geometry') {
         Object.assign(this.#requireElement(sectionClientId, elementClientId), changedFields);
-        this.#emitChange(reason);
+        this.#emitChange(reason, { sectionClientId, elementClientId });
     }
 
     removeElement(sectionClientId, elementClientId) {
@@ -140,7 +140,7 @@ export class LayoutStore extends EventTarget {
         return element;
     }
 
-    #emitChange(reason) {
-        this.dispatchEvent(new CustomEvent('change', { detail: { reason } }));
+    #emitChange(reason, subject = {}) {
+        this.dispatchEvent(new CustomEvent('change', { detail: { reason, ...subject } }));
     }
 }
