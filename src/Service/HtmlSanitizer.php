@@ -36,10 +36,13 @@ final class HtmlSanitizer
     private function sanitizeChildren(\DOMElement $parentElement): void
     {
         foreach (iterator_to_array($parentElement->childNodes) as $childNode) {
-            if (!$childNode instanceof \DOMElement) {
+            if ($childNode instanceof \DOMComment) {
+                $parentElement->removeChild($childNode);
                 continue;
             }
-            $this->sanitizeElement($childNode);
+            if ($childNode instanceof \DOMElement) {
+                $this->sanitizeElement($childNode);
+            }
         }
     }
 

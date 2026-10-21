@@ -28,6 +28,11 @@ final class HtmlSanitizerTest extends TestCase
         self::assertSame('<p>Hi</p>', $sanitized);
     }
 
+    public function testStripsHtmlComments(): void
+    {
+        self::assertSame('<p>x</p>', $this->htmlSanitizer->sanitize('<!-- c --><p>x<!-- d --></p>'));
+    }
+
     public function testStripsDangerousStylesButKeepsFontSize(): void
     {
         $sanitized = $this->htmlSanitizer->sanitize('<span style="position: fixed; font-size: 18px">x</span>');
