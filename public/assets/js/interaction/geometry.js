@@ -30,6 +30,32 @@ export function clampElementBox({ offsetXPercent, offsetYPercent, widthPercent, 
     };
 }
 
+function clampMovingEdges(startEdge, endEdge, movingStart, movingEnd) {
+    let clampedStart = startEdge;
+    let clampedEnd = endEdge;
+    if (movingStart) {
+        clampedStart = clamp(startEdge, 0, endEdge - MINIMUM_ELEMENT_SIZE_PERCENT);
+    }
+    if (movingEnd) {
+        clampedEnd = clamp(endEdge, clampedStart + MINIMUM_ELEMENT_SIZE_PERCENT, MAXIMUM_PERCENT);
+    }
+    return { start: clampedStart, end: clampedEnd };
+}
+
+export function clampResizedElementBox(
+    { offsetXPercent, offsetYPercent, widthPercent, heightPercent },
+    { left = false, right = false, top = false, bottom = false },
+) {
+    const horizontal = clampMovingEdges(offsetXPercent, offsetXPercent + widthPercent, left, right);
+    const vertical = clampMovingEdges(offsetYPercent, offsetYPercent + heightPercent, top, bottom);
+    return {
+        offsetXPercent: roundToTwoDecimals(horizontal.start),
+        offsetYPercent: roundToTwoDecimals(vertical.start),
+        widthPercent: roundToTwoDecimals(horizontal.end - horizontal.start),
+        heightPercent: roundToTwoDecimals(vertical.end - vertical.start),
+    };
+}
+
 export function clampSectionPlacement({ gridColumn, columnSpan, gridRow, rowSpan }) {
     const clampedColumnSpan = clamp(Math.round(columnSpan), 1, GRID_COLUMN_COUNT);
     return {
