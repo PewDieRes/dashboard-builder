@@ -65,12 +65,26 @@ docker compose up --build
 
 Open http://127.0.0.1:8080. MySQL is exposed on port 3307 and is initialised with `database/schema.sql` and `database/seed.sql`.
 
+## Deploy for free (Render + Aiven MySQL)
+
+1. Create a free MySQL service on [Aiven](https://console.aiven.io) and note host, port, user, password, database
+   name and the CA certificate.
+2. On [Render](https://dashboard.render.com), choose **New > Blueprint** and select this repository. Render reads
+   `render.yaml` and asks for `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_SSL_CA`
+   (paste the full PEM certificate, including the `BEGIN`/`END` lines).
+3. On first boot the container runs `scripts/install-database.php`, which creates the schema and sample dashboard
+   when the database is empty, then starts Apache on Render's `PORT`.
+
+Free-tier notes: the Render service sleeps after 15 minutes idle (the first request takes up to a minute), and
+uploaded images live on the container disk, so they are lost on redeploy.
+
 ## Using the builder
 
 1. **Add section** places a new section below the existing ones. Drag it by its header; resize from its right or bottom edge.
 2. Click a section to select it, then use **Add text**, **Add image** or **Add chart**.
-3. Drag an element by its handle; resize from any edge or corner.
-4. Text: click into it and use the formatting bar (bold, italic, font size).
+3. Drag an element by its handle (the ☰ pill that appears on hover, top-left); resize from any edge or corner.
+4. Text: click into the text and type. Select some text, then use the formatting bar that appears while the
+   text is focused: **B** (bold), **I** (italic) or the **Size** dropdown (font size).
 5. Image: **Replace** uploads a new image.
 6. Chart: **Edit chart** (or double-click) to change type, title and data, or press **Generate random data**.
 7. Changes save automatically; reload the page to see the layout restored from MySQL.
@@ -153,4 +167,12 @@ vendor/bin/phpunit --testsuite Unit
 # API smoke test against a running server
 php -d upload_max_filesize=5M -d post_max_size=8M -S 127.0.0.1:8080 -t public public/index.php &
 bash scripts/api-smoke-test.sh
+
+# Browser end-to-end tests (Playwright, uses the installed Google Chrome) against a running server
+npm install
+npm run test:e2e
 ```
+
+The end-to-end suite covers adding, moving, resizing, renaming and deleting sections; adding, moving, resizing and
+deleting elements; rich text formatting; image upload and rejection; chart editing and random data; creating and
+switching dashboards; and the stacked phone layout. Every test also fails on any uncaught error in the page.
