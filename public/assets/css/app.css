@@ -677,6 +677,10 @@ body {
    Responsive: stacked, read-only layout below 768px
    ========================================================================== */
 @media (max-width: 767px) {
+    .element-frame {
+        touch-action: auto;
+    }
+
     #dashboard-canvas {
         padding: var(--space-3);
     }
