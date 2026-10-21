@@ -142,9 +142,11 @@ export class DragResizeController {
 
     #previewSectionResize(sectionNode, gesture, resizedRect) {
         const { startPlacement, metrics } = gesture;
+        const requestedColumnSpan = Math.round((resizedRect.width + metrics.columnGap) / metrics.columnPitch);
+        const maximumColumnSpan = this.#columnCount - startPlacement.gridColumn + 1;
         this.#applySectionPlacement(sectionNode, gesture, {
             ...startPlacement,
-            columnSpan: Math.round((resizedRect.width + metrics.columnGap) / metrics.columnPitch),
+            columnSpan: Math.min(requestedColumnSpan, maximumColumnSpan),
             rowSpan: Math.round(resizedRect.height / metrics.rowPitch),
         });
     }
