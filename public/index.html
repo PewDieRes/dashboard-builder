@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard Builder</title>
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header class="toolbar">
+        <div class="toolbar-brand">Dashboard Builder</div>
+
+        <div class="toolbar-group">
+            <label class="visually-hidden" for="dashboard-select">Dashboard</label>
+            <select id="dashboard-select" class="toolbar-select"></select>
+            <button type="button" id="new-dashboard-button" class="button">New dashboard</button>
+        </div>
+
+        <div class="toolbar-group">
+            <label class="visually-hidden" for="dashboard-name-input">Dashboard name</label>
+            <input type="text" id="dashboard-name-input" class="toolbar-name-input" maxlength="120" placeholder="Dashboard name">
+        </div>
+
+        <div class="toolbar-group">
+            <button type="button" id="add-section-button" class="button button-primary">Add section</button>
+            <button type="button" class="button" data-element-type="text">Add text</button>
+        </div>
+
+        <div class="toolbar-group toolbar-end">
+            <span id="save-status" class="save-status" data-status="saved" role="status">Saved</span>
+            <button type="button" id="save-button" class="button">Save</button>
+        </div>
+    </header>
+
+    <div class="rich-text-toolbar" hidden></div>
+
+    <main id="dashboard-canvas"></main>
+
+    <div id="toast-region" class="toast-region"></div>
+
+    <dialog id="chart-editor-dialog" class="dialog"></dialog>
+
+    <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>

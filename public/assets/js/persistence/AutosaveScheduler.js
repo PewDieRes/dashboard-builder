@@ -23,6 +23,9 @@ export class AutosaveScheduler {
     /** Resolves to true when everything is persisted, false when the save failed. */
     async saveNow() {
         this.#cancelTimer();
+        if (this.#layoutStore.getDashboardId() === null) {
+            return true;
+        }
         if (this.#inFlightSave) {
             return this.#inFlightSave;
         }
