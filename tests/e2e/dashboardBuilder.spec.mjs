@@ -207,6 +207,70 @@ test.describe('charts', () => {
     });
 });
 
+test.describe('live chart data', () => {
+    test('links a chart to a server metric and keeps the link after reload', async ({ page, request }) => {
+        await page.locator('.chart-edit-button').click();
+        const dialog = page.locator('#chart-editor-dialog');
+        await dialog.locator('select[name="dataSource"]').selectOption('signups-by-channel');
+        await expect(dialog.locator('.chart-data-row')).toHaveCount(5);
+        await expect(dialog.getByLabel('Label').first()).not.toBeEditable();
+        await expect(dialog.getByText('Data comes from the server and refreshes on every load')).toBeVisible();
+        await dialog.getByRole('button', { name: 'Save' }).click();
+        await expect(dialog).toBeHidden();
+        await expect(page.locator('.chart-live-badge')).toBeVisible();
+
+        await expectSavedLayout(request, dashboard => {
+            const content = dashboard.sections[1].elements[0].content;
+            return content.dataSource === 'signups-by-channel' && content.labels.length === 5;
+        });
+
+        await page.reload();
+        await expect(page.locator('.chart-live-badge')).toBeVisible();
+    });
+
+    test('switching back to manual data removes the link', async ({ page, request }) => {
+        await page.locator('.chart-edit-button').click();
+        const dialog = page.locator('#chart-editor-dialog');
+        await dialog.locator('select[name="dataSource"]').selectOption('signups-by-channel');
+        await expect(dialog.locator('.chart-data-row')).toHaveCount(5);
+        await dialog.getByRole('button', { name: 'Save' }).click();
+        await expectSavedLayout(request, dashboard =>
+            dashboard.sections[1].elements[0].content.dataSource === 'signups-by-channel');
+
+        await page.locator('.chart-edit-button').click();
+        await dialog.locator('select[name="dataSource"]').selectOption({ label: 'Manual data' });
+        await expect(dialog.getByLabel('Label').first()).toBeEditable();
+        await dialog.getByRole('button', { name: 'Save' }).click();
+        await expect(page.locator('.chart-live-badge')).toBeHidden();
+
+        await expectSavedLayout(request, dashboard =>
+            !('dataSource' in dashboard.sections[1].elements[0].content));
+    });
+});
+
+test.describe('metrics api', () => {
+    test('lists the available metrics', async ({ request }) => {
+        const response = await request.get('/api/metrics');
+        expect(response.status()).toBe(200);
+        const { metrics } = await response.json();
+        expect(metrics.map(metric => metric.key)).toEqual(['monthly-revenue', 'daily-visitors', 'signups-by-channel']);
+    });
+
+    test('returns a generated series for a known metric', async ({ request }) => {
+        const response = await request.get('/api/metrics/daily-visitors');
+        expect(response.status()).toBe(200);
+        const metric = await response.json();
+        expect(metric.labels).toHaveLength(7);
+        expect(metric.values).toHaveLength(7);
+    });
+
+    test('returns 404 for an unknown metric', async ({ request }) => {
+        const response = await request.get('/api/metrics/unknown');
+        expect(response.status()).toBe(404);
+        expect((await response.json()).error.code).toBe('not_found');
+    });
+});
+
 test.describe('dashboards', () => {
     test('creates a new dashboard and switches back', async ({ page }) => {
         page.removeAllListeners('dialog');
