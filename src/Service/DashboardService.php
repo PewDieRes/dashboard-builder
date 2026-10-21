@@ -49,27 +49,25 @@ final class DashboardService
 
         $dashboard = Dashboard::fromArray($layoutPayload)->withId($dashboardId);
 
-        return $this->dashboardRepository->replaceLayout($this->sanitizeTextElements($dashboard));
+        return $this->dashboardRepository->replaceLayout($this->normalizeElements($dashboard));
     }
 
-    private function sanitizeTextElements(Dashboard $dashboard): Dashboard
+    private function normalizeElements(Dashboard $dashboard): Dashboard
     {
         return $dashboard->withSections(array_map(
-            fn (Section $section): Section => $section->withElements(array_map($this->sanitizeElement(...), $section->elements)),
+            fn (Section $section): Section => $section->withElements(array_map($this->normalizeElement(...), $section->elements)),
             $dashboard->sections,
         ));
     }
 
-    private function sanitizeElement(Element $element): Element
+    private function normalizeElement(Element $element): Element
     {
-        if ($element->elementType !== ElementType::Text) {
-            return $element;
+        $knownContent = array_intersect_key($element->content, array_flip($element->elementType->contentKeys()));
+        if ($element->elementType === ElementType::Text) {
+            $knownContent['html'] = $this->htmlSanitizer->sanitize($knownContent['html']);
         }
 
-        return $element->withContent([
-            ...$element->content,
-            'html' => $this->htmlSanitizer->sanitize($element->content['html']),
-        ]);
+        return $element->withContent($knownContent);
     }
 
     /** @param array<string, string> $fieldErrors */

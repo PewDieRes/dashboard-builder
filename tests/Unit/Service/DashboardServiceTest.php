@@ -46,6 +46,22 @@ final class DashboardServiceTest extends TestCase
         self::assertSame($dashboard->id, $saved->id);
     }
 
+    public function testSaveLayoutDropsUnknownContentKeys(): void
+    {
+        $dashboard = $this->dashboardService->createDashboard(['name' => 'Sales']);
+        $layout = LayoutValidatorTest::validLayout();
+        foreach ([0, 1, 2] as $elementIndex) {
+            $layout['sections'][0]['elements'][$elementIndex]['content']['injected'] = str_repeat('x', 100);
+        }
+
+        $saved = $this->dashboardService->saveLayout($dashboard->id, $layout);
+
+        $elements = $saved->sections[0]->elements;
+        self::assertSame(['chartType', 'title', 'labels', 'values'], array_keys($elements[0]->content));
+        self::assertSame(['html'], array_keys($elements[1]->content));
+        self::assertSame(['imageUrl', 'altText'], array_keys($elements[2]->content));
+    }
+
     public function testSaveLayoutRejectsInvalidPayload(): void
     {
         $dashboard = $this->dashboardService->createDashboard(['name' => 'Sales']);
