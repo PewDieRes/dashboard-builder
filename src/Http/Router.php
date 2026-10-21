@@ -6,6 +6,10 @@ namespace DashboardBuilder\Http;
 
 final class Router
 {
+    private const NUMERIC_PLACEHOLDER = 'id';
+    private const NUMERIC_PATTERN = '\d+';
+    private const SLUG_PATTERN = '[a-z0-9-]+';
+
     /** @var list<array{method: string, regularExpression: string, handler: callable}> */
     private array $routes = [];
 
@@ -44,11 +48,16 @@ final class Router
 
         foreach ($segments as $segment) {
             $regularExpression .= preg_match('#^\{(\w+)\}$#', $segment, $placeholder) === 1
-                ? '(?P<' . $placeholder[1] . '>\d+)'
+                ? '(?P<' . $placeholder[1] . '>' . self::placeholderPattern($placeholder[1]) . ')'
                 : preg_quote($segment, '#');
         }
 
         return '#^' . $regularExpression . '$#';
+    }
+
+    private static function placeholderPattern(string $placeholderName): string
+    {
+        return $placeholderName === self::NUMERIC_PLACEHOLDER ? self::NUMERIC_PATTERN : self::SLUG_PATTERN;
     }
 
     /** @return array<string, string> */

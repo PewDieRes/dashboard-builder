@@ -47,4 +47,20 @@ final class RouterTest extends TestCase
         $this->expectException(NotFoundException::class);
         $router->dispatch(new Request('GET', '/api/dashboards/abc'));
     }
+
+    public function testSlugPlaceholderMatchesLowercaseLettersDigitsAndHyphens(): void
+    {
+        $router = new Router();
+        $router->addRoute('GET', '/api/metrics/{metricKey}', fn (Request $request, array $routeParameters) => new JsonResponse(['key' => $routeParameters['metricKey']]));
+        $response = $router->dispatch(new Request('GET', '/api/metrics/monthly-revenue-2'));
+        self::assertSame(['key' => 'monthly-revenue-2'], $response->payload());
+    }
+
+    public function testSlugPlaceholderRejectsUppercaseAndSlashes(): void
+    {
+        $router = new Router();
+        $router->addRoute('GET', '/api/metrics/{metricKey}', fn () => new JsonResponse([]));
+        $this->expectException(NotFoundException::class);
+        $router->dispatch(new Request('GET', '/api/metrics/Monthly/Revenue'));
+    }
 }
