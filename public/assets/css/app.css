@@ -904,3 +904,78 @@ body {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
 }
+
+/* ==========================================================================
+   Layers panel
+   ========================================================================== */
+.panel-hint {
+    margin: 0;
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
+.layer-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: calc(var(--space-1) * -1);
+}
+
+.layer-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.layer-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    height: 28px;
+    padding: 0 var(--space-2);
+    font: inherit;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-small);
+}
+
+.layer-row .icon {
+    color: var(--color-text-muted);
+}
+
+.layer-row-section {
+    font-weight: 500;
+}
+
+.layer-row-element {
+    padding-left: var(--space-6);
+}
+
+.layer-row:hover {
+    background: var(--color-surface-hover);
+}
+
+.layer-row.is-selected {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+}
+
+.layer-row.is-selected .icon {
+    color: var(--color-accent);
+}
+
+.layer-row:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+}
+
+.layer-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

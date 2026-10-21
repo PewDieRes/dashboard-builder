@@ -12,6 +12,7 @@ import { LayoutStore } from './state/LayoutStore.js';
 import { AddPanel } from './ui/AddPanel.js';
 import { ChartEditorDialog } from './ui/ChartEditorDialog.js';
 import { FrameLabel } from './ui/FrameLabel.js';
+import { LayersPanel } from './ui/LayersPanel.js';
 import { Notifier } from './ui/Notifier.js';
 import { RichTextToolbar } from './ui/RichTextToolbar.js';
 import { SidebarTabs } from './ui/SidebarTabs.js';
@@ -79,6 +80,8 @@ async function startApplication() {
         layoutStore,
         elementInserter: new ElementInserter(layoutStore),
     });
+
+    new LayersPanel(document.querySelector('#layers-panel'), layoutStore);
 
     let toolbar = null;
     const autosaveScheduler = new AutosaveScheduler(layoutStore, apiClient, {
