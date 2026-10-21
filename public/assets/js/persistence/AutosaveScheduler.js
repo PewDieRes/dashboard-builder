@@ -29,6 +29,9 @@ export class AutosaveScheduler {
         if (this.#inFlightSave) {
             return this.#inFlightSave;
         }
+        if (!this.#hasUnsavedChanges) {
+            return true;
+        }
         this.#inFlightSave = this.#saveUntilSettled();
         try {
             return await this.#inFlightSave;
