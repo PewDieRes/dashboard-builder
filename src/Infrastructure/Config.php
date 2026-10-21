@@ -6,7 +6,7 @@ namespace DashboardBuilder\Infrastructure;
 
 final class Config
 {
-    private const OVERRIDABLE_KEYS = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'UPLOAD_DIRECTORY'];
+    private const OVERRIDABLE_KEYS = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_SSL_CA', 'UPLOAD_DIRECTORY'];
 
     /** @param array<string, string> $values */
     private function __construct(private readonly array $values)
@@ -50,6 +50,14 @@ final class Config
     public function databasePassword(): string
     {
         return $this->values['DB_PASSWORD'] ?? '';
+    }
+
+    /** PEM-encoded certificate authority for TLS database connections (hosted MySQL), or null for plain connections. */
+    public function databaseSslCertificateAuthority(): ?string
+    {
+        $certificateAuthority = trim($this->values['DB_SSL_CA'] ?? '');
+
+        return $certificateAuthority === '' ? null : $certificateAuthority;
     }
 
     public function uploadDirectory(): string
