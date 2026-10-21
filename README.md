@@ -5,6 +5,8 @@ Add **sections** to a 12-column dashboard grid, then place **rich text**, **imag
 Every section and element can be moved and resized. The full layout (position, size and content) is stored in
 MySQL and restored on reload.
 
+**Live demo:** https://dashboard-builder-wxns.onrender.com (free tier: the first load after idle can take up to a minute)
+
 ## Features
 
 - Sections: add, drag (by the header), resize, rename, delete. Snap to a 12-column grid.
