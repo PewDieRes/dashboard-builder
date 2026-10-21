@@ -16,7 +16,7 @@ enum ElementType: string
         return match ($this) {
             self::Text => ['html'],
             self::Image => ['imageUrl', 'altText'],
-            self::Chart => ['chartType', 'title', 'labels', 'values'],
+            self::Chart => ['chartType', 'title', 'labels', 'values', 'dataSource'],
         };
     }
 }

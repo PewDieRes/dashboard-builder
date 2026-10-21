@@ -82,6 +82,29 @@ final class LayoutValidatorTest extends TestCase
         self::assertArrayHasKey('sections.0.elements.0.content.values', $this->layoutValidator->validate($layout));
     }
 
+    public function testChartWithoutDataSourceIsValid(): void
+    {
+        self::assertSame([], $this->layoutValidator->validate(self::validLayout()));
+    }
+
+    public function testChartWithNullOrValidDataSourceIsValid(): void
+    {
+        foreach ([null, 'monthly-revenue', 'a', str_repeat('a', 60)] as $dataSource) {
+            $layout = self::validLayout();
+            $layout['sections'][0]['elements'][0]['content']['dataSource'] = $dataSource;
+            self::assertSame([], $this->layoutValidator->validate($layout));
+        }
+    }
+
+    public function testInvalidDataSourceIsReported(): void
+    {
+        foreach ([5, '', 'Monthly Revenue', 'has_underscore', str_repeat('a', 61), ['monthly-revenue']] as $dataSource) {
+            $layout = self::validLayout();
+            $layout['sections'][0]['elements'][0]['content']['dataSource'] = $dataSource;
+            self::assertArrayHasKey('sections.0.elements.0.content.dataSource', $this->layoutValidator->validate($layout));
+        }
+    }
+
     public function testUnknownElementTypeIsReported(): void
     {
         $layout = self::validLayout();

@@ -19,6 +19,7 @@ final class LayoutValidator
     private const MAXIMUM_TEXT_HTML_LENGTH = 20000;
     private const MAXIMUM_ALT_TEXT_LENGTH = 200;
     private const MAXIMUM_CHART_POINTS = 24;
+    private const DATA_SOURCE_PATTERN = '/^[a-z0-9-]{1,60}$/';
     private const CHART_TYPES = ['bar', 'line'];
     private const ALLOWED_IMAGE_URL_PREFIXES = ['/uploads/', '/assets/images/', 'https://'];
 
@@ -235,7 +236,17 @@ final class LayoutValidator
             $errors["$path.title"] = 'Chart title must be at most 120 characters';
         }
 
+        if (!$this->isValidDataSource($content['dataSource'] ?? null)) {
+            $errors["$path.dataSource"] = 'Data source must be a metric key of lowercase letters, digits and hyphens';
+        }
+
         return $errors + $this->validateChartSeries($content['labels'] ?? null, $content['values'] ?? null, $path);
+    }
+
+    private function isValidDataSource(mixed $dataSource): bool
+    {
+        return $dataSource === null
+            || (is_string($dataSource) && preg_match(self::DATA_SOURCE_PATTERN, $dataSource) === 1);
     }
 
     /** @return array<string, string> */

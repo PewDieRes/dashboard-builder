@@ -62,6 +62,17 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(['imageUrl', 'altText'], array_keys($elements[2]->content));
     }
 
+    public function testSaveLayoutKeepsChartDataSource(): void
+    {
+        $dashboard = $this->dashboardService->createDashboard(['name' => 'Sales']);
+        $layout = LayoutValidatorTest::validLayout();
+        $layout['sections'][0]['elements'][0]['content']['dataSource'] = 'monthly-revenue';
+
+        $saved = $this->dashboardService->saveLayout($dashboard->id, $layout);
+
+        self::assertSame('monthly-revenue', $saved->sections[0]->elements[0]->content['dataSource']);
+    }
+
     public function testSaveLayoutRejectsInvalidPayload(): void
     {
         $dashboard = $this->dashboardService->createDashboard(['name' => 'Sales']);
