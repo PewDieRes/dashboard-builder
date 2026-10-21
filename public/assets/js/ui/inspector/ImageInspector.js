@@ -20,7 +20,7 @@ export class ImageInspector {
             thumbnailNode.append(createNode('img', { attributes: { src: imageUrl, alt: '' } }));
         }
         return [
-            createInspectorSection('Image', [
+            createInspectorSection('Properties', [
                 thumbnailNode,
                 createButton({ label: 'Replace', onClick: () => fileInputNode.click() }),
                 fileInputNode,

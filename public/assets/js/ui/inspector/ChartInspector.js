@@ -31,7 +31,7 @@ export class ChartInspector {
         const { content } = this.#findElement(subject);
         const dataSource = this.#createDataSourceField(subject, content);
         return [
-            createInspectorSection('Chart', [
+            createInspectorSection('Properties', [
                 createSegmentedControl({
                     label: 'Type',
                     options: CHART_TYPE_OPTIONS,

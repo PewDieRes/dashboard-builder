@@ -1102,6 +1102,10 @@ body {
     padding: 0 var(--space-2);
 }
 
+.button-row-stacked .button {
+    flex: none;
+}
+
 .inspector-section > .button {
     width: 100%;
 }

@@ -14,6 +14,6 @@ export class TextInspector {
         const hintNode = createHint('Click into the text to format it');
         hintNode.classList.add('rich-text-hint');
         toolbarHostNode.append(hintNode);
-        return [createInspectorSection('Text', [toolbarHostNode])];
+        return [createInspectorSection('Properties', [toolbarHostNode])];
     }
 }

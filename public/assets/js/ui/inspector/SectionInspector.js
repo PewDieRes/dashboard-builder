@@ -15,7 +15,7 @@ export class SectionInspector {
 
     render(sectionClientId) {
         return [
-            createInspectorSection('Section', [
+            createInspectorSection('General', [
                 createTextField({
                     label: 'Title',
                     placeholder: 'Section title',

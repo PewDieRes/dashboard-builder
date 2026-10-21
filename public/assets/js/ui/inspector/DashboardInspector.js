@@ -12,7 +12,7 @@ export class DashboardInspector {
         const sections = this.#layoutStore.getSections();
         const elementCount = sections.reduce((total, section) => total + section.elements.length, 0);
         return [
-            createInspectorSection('Dashboard', [
+            createInspectorSection('General', [
                 createTextField({
                     label: 'Name',
                     readValue: () => this.#layoutStore.getDashboardName(),
