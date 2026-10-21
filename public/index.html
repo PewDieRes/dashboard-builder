@@ -22,11 +22,12 @@
             <input type="text" id="dashboard-name-input" class="control topbar-name-input" maxlength="120" placeholder="Dashboard name">
         </div>
 
-        <div class="topbar-group topbar-center"></div>
+        <div id="device-switcher" class="topbar-group topbar-center"></div>
 
         <div class="topbar-group topbar-end">
             <span id="save-status" class="save-status" data-status="saved" role="status">Saved</span>
             <button type="button" id="save-button" class="button">Save</button>
+            <button type="button" id="preview-button" class="button" aria-pressed="false">Preview</button>
         </div>
     </header>
 
@@ -41,8 +42,10 @@
         </aside>
 
         <main id="workspace" class="workspace">
-            <p id="frame-label" class="frame-label"></p>
-            <div id="dashboard-canvas" class="dashboard-frame"></div>
+            <div id="frame-column" class="frame-column">
+                <p id="frame-label" class="frame-label"></p>
+                <div id="dashboard-canvas" class="dashboard-frame"></div>
+            </div>
         </main>
 
         <aside id="inspector" class="inspector" aria-label="Inspector"></aside>

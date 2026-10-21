@@ -252,10 +252,21 @@ body {
     overflow: auto;
 }
 
-.frame-label {
-    align-self: center;
+.frame-column {
+    flex: none;
     width: 100%;
     max-width: var(--frame-width-desktop);
+}
+
+.frame-column[data-device="tablet"] {
+    max-width: var(--frame-width-tablet);
+}
+
+.frame-column[data-device="mobile"] {
+    max-width: var(--frame-width-mobile);
+}
+
+.frame-label {
     margin: 0 0 var(--space-1);
     font-size: var(--font-size-small);
     color: var(--color-text-faint);
@@ -265,9 +276,6 @@ body {
    Canvas frame and grid
    ========================================================================== */
 .dashboard-frame {
-    flex: none;
-    width: 100%;
-    max-width: var(--frame-width-desktop);
     min-height: 480px;
     padding: var(--space-5);
     background: var(--color-surface);
@@ -1194,4 +1202,65 @@ body {
     .topbar-end {
         justify-content: space-between;
     }
+}
+
+/* ==========================================================================
+   Device switcher and preview toggle
+   ========================================================================== */
+.device-switcher .segment-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 24px;
+    padding: 0;
+}
+
+.button[aria-pressed="true"] {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent);
+}
+
+#preview-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* ==========================================================================
+   Preview mode: no sidebars and no editing chrome. These rules must win over every hover and selection rule.
+   ========================================================================== */
+body.is-preview .editor-body {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+body.is-preview :is(.sidebar, .inspector, .frame-label) {
+    display: none;
+}
+
+body.is-preview :is(
+    .selection-chip,
+    .selection-handle,
+    .element-delete-button,
+    .section-delete-button,
+    .section-drag-grip,
+    .chart-edit-button,
+    .image-replace-button
+) {
+    display: none !important;
+}
+
+body.is-preview :is(.section, .element-frame, .section-body) {
+    background: transparent;
+    border-color: transparent;
+    outline: none;
+}
+
+body.is-preview .section-header,
+body.is-preview .text-element {
+    pointer-events: none;
+}
+
+body.is-preview .section-title-input {
+    border-color: transparent;
 }

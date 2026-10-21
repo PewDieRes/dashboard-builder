@@ -8,10 +8,12 @@ import { ImageElementRenderer } from './elements/ImageElementRenderer.js';
 import { ImageUploader } from './elements/ImageUploader.js';
 import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
+import { InteractionGate } from './interaction/InteractionGate.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
 import { LayoutStore } from './state/LayoutStore.js';
 import { AddPanel } from './ui/AddPanel.js';
 import { ChartEditorDialog } from './ui/ChartEditorDialog.js';
+import { DeviceSwitcher } from './ui/DeviceSwitcher.js';
 import { FrameLabel } from './ui/FrameLabel.js';
 import { ChartInspector } from './ui/inspector/ChartInspector.js';
 import { DashboardInspector } from './ui/inspector/DashboardInspector.js';
@@ -22,22 +24,24 @@ import { SectionInspector } from './ui/inspector/SectionInspector.js';
 import { TextInspector } from './ui/inspector/TextInspector.js';
 import { LayersPanel } from './ui/LayersPanel.js';
 import { Notifier } from './ui/Notifier.js';
+import { PreviewMode } from './ui/PreviewMode.js';
 import { RichTextToolbar } from './ui/RichTextToolbar.js';
 import { SidebarTabs } from './ui/SidebarTabs.js';
 import { Toolbar } from './ui/Toolbar.js';
 
 const COMPACT_VIEWPORT_QUERY = '(max-width: 767px)';
+const COMPACT_VIEWPORT_BLOCKING_REASON = 'compact-viewport';
 const DEFAULT_DASHBOARD_NAME = 'My Dashboard';
 
 function synchronizeUrl(dashboardId) {
     history.replaceState(null, '', `?dashboard=${dashboardId}`);
 }
 
-function applyResponsiveMode(dragResizeController) {
+function applyResponsiveMode(interactionGate) {
     const compactViewport = window.matchMedia(COMPACT_VIEWPORT_QUERY);
     const apply = () => {
         document.body.classList.toggle('is-compact', compactViewport.matches);
-        dragResizeController.setEnabled(!compactViewport.matches);
+        interactionGate.setBlocked(COMPACT_VIEWPORT_BLOCKING_REASON, compactViewport.matches);
     };
     compactViewport.addEventListener('change', apply);
     apply();
@@ -87,9 +91,11 @@ async function startApplication() {
     );
     const rendererRegistry = createRendererRegistry({ richTextToolbar, imageUploader, chartEditorDialog });
     const dragResizeController = new DragResizeController(layoutStore);
+    const interactionGate = new InteractionGate(dragResizeController);
+    const canvasNode = document.querySelector('#dashboard-canvas');
 
     new FrameLabel(document.querySelector('#frame-label'), layoutStore);
-    new DashboardCanvas(document.querySelector('#dashboard-canvas'), {
+    new DashboardCanvas(canvasNode, {
         workspaceNode: document.querySelector('#workspace'),
         layoutStore,
         rendererRegistry,
@@ -97,6 +103,12 @@ async function startApplication() {
         apiClient,
         notifier,
     });
+    new DeviceSwitcher(document.querySelector('#device-switcher'), {
+        frameColumnNode: document.querySelector('#frame-column'),
+        frameNode: canvasNode,
+        interactionGate,
+    });
+    new PreviewMode(document.querySelector('#preview-button'), { layoutStore, canvasNode, interactionGate });
     new SidebarTabs(document.querySelector('#sidebar'));
     new AddPanel(document.querySelector('#add-panel'), {
         layoutStore,
@@ -118,7 +130,7 @@ async function startApplication() {
         onSaveRequested: () => autosaveScheduler.saveNow(),
     });
 
-    applyResponsiveMode(dragResizeController);
+    applyResponsiveMode(interactionGate);
 
     try {
         const initialDashboardId = await resolveInitialDashboardId(toolbar, apiClient);
