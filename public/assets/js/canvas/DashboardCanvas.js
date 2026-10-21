@@ -17,7 +17,8 @@ export class DashboardCanvas {
         this.#sectionView = new SectionView({ layoutStore, rendererRegistry, dragResizeController, apiClient, notifier });
         layoutStore.addEventListener('change', event => this.#handleChange(event.detail.reason));
         this.#rootNode.addEventListener('pointerdown', event => this.#clearSelectionOnBackgroundPress(event));
-        this.#renderAll();
+        // The first 'load' change replaces this; rendering the empty store would flash "No sections yet".
+        this.#rootNode.replaceChildren(createNode('p', { className: 'canvas-empty-state', text: 'Loading dashboard…' }));
     }
 
     #handleChange(reason) {
