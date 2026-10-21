@@ -1,11 +1,13 @@
 import { DashboardApiClient } from './api/DashboardApiClient.js';
 import { DashboardCanvas } from './canvas/DashboardCanvas.js';
+import { ChartElementRenderer } from './elements/ChartElementRenderer.js';
 import { ElementRendererRegistry } from './elements/ElementRendererRegistry.js';
 import { ImageElementRenderer } from './elements/ImageElementRenderer.js';
 import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
 import { LayoutStore } from './state/LayoutStore.js';
+import { ChartEditorDialog } from './ui/ChartEditorDialog.js';
 import { Notifier } from './ui/Notifier.js';
 import { RichTextToolbar } from './ui/RichTextToolbar.js';
 import { Toolbar } from './ui/Toolbar.js';
@@ -43,6 +45,8 @@ function createRendererRegistry() {
     const richTextToolbar = new RichTextToolbar(document.querySelector('.rich-text-toolbar'));
     rendererRegistry.register('text', new TextElementRenderer(richTextToolbar));
     rendererRegistry.register('image', new ImageElementRenderer());
+    const chartEditorDialog = new ChartEditorDialog(document.querySelector('#chart-editor-dialog'));
+    rendererRegistry.register('chart', new ChartElementRenderer(chartEditorDialog));
     return rendererRegistry;
 }
 
