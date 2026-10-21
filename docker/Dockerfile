@@ -15,4 +15,6 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 WORKDIR /var/www/html
 COPY --from=dependencies /app/vendor ./vendor
 COPY . .
-RUN chown -R www-data:www-data public/uploads
+RUN chown -R www-data:www-data public/uploads \
+    && chmod +x docker/entrypoint.sh
+ENTRYPOINT ["/var/www/html/docker/entrypoint.sh"]
