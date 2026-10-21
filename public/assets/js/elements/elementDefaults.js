@@ -6,7 +6,7 @@ const CONTENT_FACTORIES = {
     chart: () => ({ chartType: 'bar', title: 'New chart', ...DummyDataGenerator.generateSeries() }),
 };
 
-export function createDefaultElement(elementType) {
+export function createDefaultElement(elementType, contentOverrides = {}) {
     const createContent = CONTENT_FACTORIES[elementType];
     if (!createContent) {
         throw new Error(`Unsupported element type: ${elementType}`);
@@ -17,6 +17,6 @@ export function createDefaultElement(elementType) {
         offsetYPercent: 5,
         widthPercent: 60,
         heightPercent: 40,
-        content: createContent(),
+        content: { ...createContent(), ...contentOverrides },
     };
 }

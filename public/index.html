@@ -31,7 +31,12 @@
     </header>
 
     <div class="editor-body">
-        <aside id="sidebar" class="sidebar" aria-label="Add elements and layers"></aside>
+        <aside id="sidebar" class="sidebar" aria-label="Add elements and layers">
+            <div class="sidebar-tabs" role="tablist">
+                <button type="button" role="tab" class="sidebar-tab" data-tab="add" id="add-tab" aria-controls="add-panel">Add</button>
+            </div>
+            <div id="add-panel" class="sidebar-panel" role="tabpanel" aria-labelledby="add-tab" data-tab-panel="add"></div>
+        </aside>
 
         <main id="workspace" class="workspace">
             <p id="frame-label" class="frame-label"></p>

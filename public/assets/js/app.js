@@ -1,4 +1,5 @@
 import { DashboardApiClient } from './api/DashboardApiClient.js';
+import { ElementInserter } from './elements/ElementInserter.js';
 import { DashboardCanvas } from './canvas/DashboardCanvas.js';
 import { ChartElementRenderer } from './elements/ChartElementRenderer.js';
 import { ElementRendererRegistry } from './elements/ElementRendererRegistry.js';
@@ -8,10 +9,12 @@ import { DragResizeController } from './interaction/DragResizeController.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
 import { createNode } from './dom/createNode.js';
 import { LayoutStore } from './state/LayoutStore.js';
+import { AddPanel } from './ui/AddPanel.js';
 import { ChartEditorDialog } from './ui/ChartEditorDialog.js';
 import { FrameLabel } from './ui/FrameLabel.js';
 import { Notifier } from './ui/Notifier.js';
 import { RichTextToolbar } from './ui/RichTextToolbar.js';
+import { SidebarTabs } from './ui/SidebarTabs.js';
 import { Toolbar } from './ui/Toolbar.js';
 
 const COMPACT_VIEWPORT_QUERY = '(max-width: 767px)';
@@ -69,6 +72,12 @@ async function startApplication() {
         dragResizeController,
         apiClient,
         notifier,
+    });
+
+    new SidebarTabs(document.querySelector('#sidebar'));
+    new AddPanel(document.querySelector('#add-panel'), {
+        layoutStore,
+        elementInserter: new ElementInserter(layoutStore),
     });
 
     let toolbar = null;
