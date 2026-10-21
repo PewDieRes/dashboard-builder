@@ -63,7 +63,7 @@ elements(id PK, section_id FK -> sections ON DELETE CASCADE,
 - Elements are positioned in percent of their section (0–100), so they scale with the section.
 - `content` by type:
   - text: `{ "html": string }` (sanitized; allowlist `p, div, br, b, strong, i, em, span[style=font-size]`)
-  - image: `{ "imageUrl": string, "altText": string }` (`imageUrl` must start with `/uploads/` or `https://`)
+  - image: `{ "imageUrl": string, "altText": string }` (`imageUrl` must start with `/uploads/`, `/assets/images/` or `https://`)
   - chart: `{ "chartType": "bar"|"line", "title": string, "labels": string[], "values": number[] }`
     (`labels.length == values.length`, 1–24 points)
 
