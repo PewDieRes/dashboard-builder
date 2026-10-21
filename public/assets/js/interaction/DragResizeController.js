@@ -1,5 +1,5 @@
 import { applyBoxStyle } from '../canvas/elementBoxStyle.js';
-import { clampElementBox, clampSectionPlacement, pixelsToPercent } from './geometry.js';
+import { clampElementBox, clampResizedElementBox, clampSectionPlacement, pixelsToPercent } from './geometry.js';
 
 const SECTION_RESIZE_MARGIN_PIXELS = 10;
 const ELEMENT_RESIZE_MARGIN_PIXELS = 6;
@@ -62,7 +62,7 @@ export class DragResizeController {
                         }
                         begin();
                     },
-                    move: event => this.#previewElementChange(
+                    move: event => this.#previewElementMove(
                         frameNode,
                         gesture,
                         { left: event.dx, top: event.dy, width: 0, height: 0 },
@@ -75,7 +75,7 @@ export class DragResizeController {
                 margin: ELEMENT_RESIZE_MARGIN_PIXELS,
                 listeners: {
                     start: begin,
-                    move: event => this.#previewElementChange(frameNode, gesture, event.deltaRect),
+                    move: event => this.#previewElementResize(frameNode, gesture, event.deltaRect, event.edges),
                     end: commit,
                 },
             });
@@ -170,13 +170,23 @@ export class DragResizeController {
         gesture.box = null;
     }
 
-    #previewElementChange(frameNode, gesture, pixelDelta) {
+    #accumulateRawBox(gesture, pixelDelta) {
         const { rawBox, bodyRect } = gesture;
         rawBox.offsetXPercent += pixelsToPercent(pixelDelta.left, bodyRect.width);
         rawBox.offsetYPercent += pixelsToPercent(pixelDelta.top, bodyRect.height);
         rawBox.widthPercent += pixelsToPercent(pixelDelta.width, bodyRect.width);
         rawBox.heightPercent += pixelsToPercent(pixelDelta.height, bodyRect.height);
-        gesture.box = clampElementBox(rawBox);
+    }
+
+    #previewElementMove(frameNode, gesture, pixelDelta) {
+        this.#accumulateRawBox(gesture, pixelDelta);
+        gesture.box = clampElementBox(gesture.rawBox);
+        applyBoxStyle(frameNode, gesture.box);
+    }
+
+    #previewElementResize(frameNode, gesture, pixelDelta, movingEdges) {
+        this.#accumulateRawBox(gesture, pixelDelta);
+        gesture.box = clampResizedElementBox(gesture.rawBox, movingEdges);
         applyBoxStyle(frameNode, gesture.box);
     }
 
