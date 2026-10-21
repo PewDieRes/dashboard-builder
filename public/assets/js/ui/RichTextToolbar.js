@@ -10,7 +10,10 @@ export class RichTextToolbar {
     #fontSizeSelectNode;
     #attachedNode = null;
     #savedRange = null;
-    #selectionListener = () => this.#refreshPressedState();
+    #selectionListener = () => {
+        this.#rememberSelection();
+        this.#refreshPressedState();
+    };
 
     constructor(rootNode) {
         this.#rootNode = rootNode;
@@ -66,7 +69,6 @@ export class RichTextToolbar {
             className: 'rich-text-size-select',
             attributes: { 'aria-label': 'Font size' },
         }, [new Option('Size', ''), ...optionNodes]);
-        selectNode.addEventListener('mousedown', () => this.#rememberSelection());
         selectNode.addEventListener('change', () => {
             if (selectNode.value) {
                 this.#applyFontSize(Number(selectNode.value));
@@ -80,7 +82,10 @@ export class RichTextToolbar {
         const selection = window.getSelection();
         const hasSelectionInside = selection.rangeCount > 0
             && this.#attachedNode?.contains(selection.getRangeAt(0).commonAncestorContainer);
-        this.#savedRange = hasSelectionInside ? selection.getRangeAt(0).cloneRange() : null;
+        // Keep the last range inside the editor: focusing the font-size select moves the selection elsewhere.
+        if (hasSelectionInside) {
+            this.#savedRange = selection.getRangeAt(0).cloneRange();
+        }
     }
 
     #refreshPressedState() {
