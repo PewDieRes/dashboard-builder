@@ -4,6 +4,7 @@ import { clampElementBox, clampResizedElementBox, clampSectionPlacement, pixelsT
 const SECTION_RESIZE_MARGIN_PIXELS = 10;
 const ELEMENT_RESIZE_MARGIN_PIXELS = 6;
 const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea';
+const ELEMENT_DRAG_HANDLE_SELECTOR = '.element-drag-handle';
 
 export class DragResizeController {
     #layoutStore;
@@ -39,6 +40,7 @@ export class DragResizeController {
             .resizable({
                 edges: { right: true, bottom: true },
                 margin: SECTION_RESIZE_MARGIN_PIXELS,
+                ignoreFrom: INTERACTIVE_CONTROL_SELECTOR,
                 listeners: {
                     start: begin,
                     move: event => this.#previewSectionResize(sectionNode, gesture, event.rect),
@@ -49,14 +51,18 @@ export class DragResizeController {
     }
 
     attachElement(frameNode, sectionClientId, elementClientId, sectionBodyNode) {
-        const gesture = { rawBox: null, bodyRect: null, box: null };
+        const gesture = { rawBox: null, bodyRect: null, box: null, pointerDownTarget: null };
         const begin = () => this.#beginElementGesture(gesture, sectionClientId, elementClientId, sectionBodyNode);
         const commit = () => this.#commitElementGesture(gesture, sectionClientId, elementClientId);
+        // interact.js drag events do not expose where the pointer went down, so remember it for drag suppression.
+        frameNode.addEventListener('pointerdown', event => {
+            gesture.pointerDownTarget = event.target;
+        });
         const interactable = window.interact(frameNode)
             .draggable({
                 listeners: {
                     start: event => {
-                        if (this.#isDragSuppressed(event.event.target)) {
+                        if (this.#isDragSuppressed(gesture.pointerDownTarget)) {
                             event.interaction.stop();
                             return;
                         }
@@ -78,7 +84,10 @@ export class DragResizeController {
                     move: event => this.#previewElementResize(frameNode, gesture, event.deltaRect, event.edges),
                     end: commit,
                 },
-            });
+            })
+            // The drag handle sits within the top edge's resize margin; grabbing it must move the element.
+            .actionChecker((pointer, event, defaultAction) =>
+                pointer.target?.closest?.(ELEMENT_DRAG_HANDLE_SELECTOR) ? { name: 'drag' } : defaultAction);
         this.#register(frameNode, interactable);
     }
 
@@ -105,7 +114,7 @@ export class DragResizeController {
     }
 
     #isDragSuppressed(originalTarget) {
-        if (originalTarget.closest('.element-drag-handle')) {
+        if (originalTarget.closest(ELEMENT_DRAG_HANDLE_SELECTOR)) {
             return false;
         }
         if (originalTarget.closest(INTERACTIVE_CONTROL_SELECTOR)) {
