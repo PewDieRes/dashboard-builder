@@ -1,0 +1,40 @@
+DROP TABLE IF EXISTS elements, sections, dashboards;
+
+CREATE TABLE dashboards (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sections (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    dashboard_id INT UNSIGNED NOT NULL,
+    title VARCHAR(120) NOT NULL,
+    grid_column TINYINT UNSIGNED NOT NULL,
+    grid_row SMALLINT UNSIGNED NOT NULL,
+    column_span TINYINT UNSIGNED NOT NULL,
+    row_span SMALLINT UNSIGNED NOT NULL,
+    sort_order INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sections_dashboard FOREIGN KEY (dashboard_id) REFERENCES dashboards (id) ON DELETE CASCADE,
+    INDEX idx_sections_dashboard (dashboard_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE elements (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    section_id INT UNSIGNED NOT NULL,
+    element_type ENUM('text', 'image', 'chart') NOT NULL,
+    offset_x_percent DECIMAL(6,2) NOT NULL,
+    offset_y_percent DECIMAL(6,2) NOT NULL,
+    width_percent DECIMAL(6,2) NOT NULL,
+    height_percent DECIMAL(6,2) NOT NULL,
+    z_index INT NOT NULL DEFAULT 0,
+    content JSON NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_elements_section FOREIGN KEY (section_id) REFERENCES sections (id) ON DELETE CASCADE,
+    CONSTRAINT chk_elements_content CHECK (JSON_VALID(content)),
+    INDEX idx_elements_section (section_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
