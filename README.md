@@ -50,7 +50,7 @@ mysql -udashboard_app -pdashboard_app_password dashboard_builder < database/seed
 cp .env.example .env
 
 # 5. Run
-php -S 127.0.0.1:8080 -t public public/index.php
+php -d upload_max_filesize=5M -d post_max_size=8M -S 127.0.0.1:8080 -t public public/index.php
 ```
 
 Open http://127.0.0.1:8080 — the seeded "Sales Overview" dashboard loads.
@@ -151,6 +151,6 @@ vendor/bin/phpunit                 # unit + integration (integration uses dashbo
 vendor/bin/phpunit --testsuite Unit
 
 # API smoke test against a running server
-php -S 127.0.0.1:8080 -t public public/index.php &
+php -d upload_max_filesize=5M -d post_max_size=8M -S 127.0.0.1:8080 -t public public/index.php &
 bash scripts/api-smoke-test.sh
 ```

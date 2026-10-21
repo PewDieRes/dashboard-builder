@@ -31,7 +31,7 @@ final class ImageUploadController
         $uploadError = $uploadedFile['error'] ?? UPLOAD_ERR_NO_FILE;
 
         if (in_array($uploadError, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
-            throw new ValidationException([self::UPLOAD_FIELD_NAME => 'Image must be 5 MB or smaller']);
+            throw new ValidationException([self::UPLOAD_FIELD_NAME => 'Image exceeds the server upload size limit']);
         }
         if ($uploadError !== UPLOAD_ERR_OK || !is_uploaded_file((string) ($uploadedFile['tmp_name'] ?? ''))) {
             throw new ValidationException([self::UPLOAD_FIELD_NAME => 'Please choose an image to upload']);

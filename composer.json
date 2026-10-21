@@ -7,5 +7,5 @@
   "require-dev": { "phpunit/phpunit": "^11.0" },
   "autoload": { "psr-4": { "DashboardBuilder\\": "src/" } },
   "autoload-dev": { "psr-4": { "DashboardBuilder\\Tests\\": "tests/" } },
-  "scripts": { "test": "phpunit", "serve": "php -S 127.0.0.1:8080 -t public public/index.php" }
+  "scripts": { "test": "phpunit", "serve": "php -d upload_max_filesize=5M -d post_max_size=8M -S 127.0.0.1:8080 -t public public/index.php" }
 }
