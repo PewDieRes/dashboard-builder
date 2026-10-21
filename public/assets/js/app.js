@@ -9,6 +9,7 @@ import { ImageUploader } from './elements/ImageUploader.js';
 import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
 import { InteractionGate } from './interaction/InteractionGate.js';
+import { KeyboardShortcuts } from './interaction/KeyboardShortcuts.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
 import { LayoutStore } from './state/LayoutStore.js';
 import { AddPanel } from './ui/AddPanel.js';
@@ -108,7 +109,12 @@ async function startApplication() {
         frameNode: canvasNode,
         interactionGate,
     });
-    new PreviewMode(document.querySelector('#preview-button'), { layoutStore, canvasNode, interactionGate });
+    const previewMode = new PreviewMode(document.querySelector('#preview-button'), {
+        layoutStore,
+        canvasNode,
+        interactionGate,
+    });
+    new KeyboardShortcuts(layoutStore, { isEnabled: () => !previewMode.isActive() });
     new SidebarTabs(document.querySelector('#sidebar'));
     new AddPanel(document.querySelector('#add-panel'), {
         layoutStore,
