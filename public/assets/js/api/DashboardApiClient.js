@@ -32,6 +32,15 @@ export class DashboardApiClient {
         return this.#request('/images', { method: 'POST', body: formData });
     }
 
+    async listMetrics() {
+        const body = await this.#request('/metrics');
+        return body.metrics;
+    }
+
+    getMetric(metricKey) {
+        return this.#request(`/metrics/${encodeURIComponent(metricKey)}`);
+    }
+
     #jsonRequest(method, payload) {
         return { method, headers: JSON_HEADERS, body: JSON.stringify(payload) };
     }

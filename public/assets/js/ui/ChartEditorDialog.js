@@ -4,6 +4,8 @@ import { DummyDataGenerator } from '../elements/DummyDataGenerator.js';
 const MINIMUM_ROW_COUNT = 1;
 const MAXIMUM_ROW_COUNT = 24;
 const CHART_TYPES = ['bar', 'line'];
+const MANUAL_DATA_SOURCE = '';
+const LINKED_DATA_HINT = 'Data comes from the server and refreshes on every load';
 
 export class ChartEditorDialog {
     #dialogNode;
@@ -12,9 +14,15 @@ export class ChartEditorDialog {
     #rowsNode = null;
     #errorNode = null;
     #addRowButtonNode = null;
+    #dataSourceSelectNode = null;
+    #dataSourceHintNode = null;
+    #linkedDataSource = null;
+    #apiClient;
+    #metricsPromise = null;
 
-    constructor(dialogNode) {
+    constructor(dialogNode, apiClient) {
         this.#dialogNode = dialogNode;
+        this.#apiClient = apiClient;
         this.#dialogNode.addEventListener('close', () => this.#settle(null));
     }
 
@@ -35,15 +43,18 @@ export class ChartEditorDialog {
     }
 
     #renderForm(content) {
+        this.#linkedDataSource = content.dataSource ?? null;
         this.#rowsNode = createNode('div', { className: 'chart-data-rows' });
         this.#errorNode = createNode('p', { className: 'dialog-error', attributes: { role: 'alert' } });
         this.#addRowButtonNode = this.#createButton('Add row', () => this.#addRow('', ''));
+        const dataSourceFieldNode = this.#createDataSourceField();
         content.labels.forEach((label, pointIndex) => this.#addRow(label, content.values[pointIndex]));
 
         this.#formNode = createNode('form', { className: 'dialog-form', attributes: { method: 'dialog' } }, [
             createNode('h2', { className: 'dialog-title', text: 'Edit chart' }),
             this.#createTitleField(content.title),
             this.#createChartTypeField(content.chartType),
+            dataSourceFieldNode,
             createNode('fieldset', { className: 'dialog-field' }, [
                 createNode('legend', { text: 'Data' }),
                 this.#rowsNode,
@@ -57,6 +68,7 @@ export class ChartEditorDialog {
         });
         this.#dialogNode.replaceChildren(this.#formNode);
         this.#refreshRowControls();
+        this.#populateDataSourceOptions();
     }
 
     #createTitleField(title) {
@@ -76,6 +88,87 @@ export class ChartEditorDialog {
             createNode('legend', { text: 'Chart type' }),
             createNode('div', { className: 'dialog-radio-group' }, radioLabelNodes),
         ]);
+    }
+
+    #createDataSourceField() {
+        this.#dataSourceSelectNode = createNode('select', { attributes: { name: 'dataSource' } });
+        this.#dataSourceSelectNode.addEventListener('change', () => this.#handleDataSourceChange());
+        this.#dataSourceHintNode = createNode('span', { className: 'dialog-hint', text: LINKED_DATA_HINT });
+        this.#renderDataSourceOptions([]);
+        return createNode('label', { className: 'dialog-field' }, [
+            createNode('span', { text: 'Data source' }),
+            this.#dataSourceSelectNode,
+            this.#dataSourceHintNode,
+        ]);
+    }
+
+    #loadMetrics() {
+        this.#metricsPromise ??= this.#apiClient.listMetrics().catch(error => {
+            this.#metricsPromise = null;
+            throw error;
+        });
+        return this.#metricsPromise;
+    }
+
+    async #populateDataSourceOptions() {
+        const selectNode = this.#dataSourceSelectNode;
+        try {
+            const metrics = await this.#loadMetrics();
+            if (selectNode === this.#dataSourceSelectNode) {
+                this.#renderDataSourceOptions(metrics);
+            }
+        } catch {
+            // Manual data stays available when the metric list cannot be loaded.
+        }
+    }
+
+    #renderDataSourceOptions(metrics) {
+        const options = [{ key: MANUAL_DATA_SOURCE, title: 'Manual data' }, ...metrics];
+        const isLinkedMetricListed = metrics.some(metric => metric.key === this.#linkedDataSource);
+        if (this.#linkedDataSource !== null && !isLinkedMetricListed) {
+            options.push({ key: this.#linkedDataSource, title: this.#linkedDataSource });
+        }
+        this.#dataSourceSelectNode.replaceChildren(...options.map(option => {
+            const optionNode = createNode('option', { text: option.title, attributes: { value: option.key } });
+            optionNode.selected = option.key === (this.#linkedDataSource ?? MANUAL_DATA_SOURCE);
+            return optionNode;
+        }));
+    }
+
+    async #handleDataSourceChange() {
+        const selectNode = this.#dataSourceSelectNode;
+        const requestedDataSource = selectNode.value;
+        if (requestedDataSource === MANUAL_DATA_SOURCE) {
+            this.#switchToManualData();
+            return;
+        }
+        let metric;
+        try {
+            metric = await this.#apiClient.getMetric(requestedDataSource);
+        } catch (error) {
+            if (selectNode === this.#dataSourceSelectNode && selectNode.value === requestedDataSource) {
+                selectNode.value = this.#linkedDataSource ?? MANUAL_DATA_SOURCE;
+                this.#errorNode.textContent = error.message;
+            }
+            return;
+        }
+        if (selectNode !== this.#dataSourceSelectNode || selectNode.value !== requestedDataSource) {
+            return;
+        }
+        this.#linkedDataSource = requestedDataSource;
+        this.#replaceRows(metric.labels, metric.values);
+        this.#errorNode.textContent = '';
+    }
+
+    #switchToManualData() {
+        this.#linkedDataSource = null;
+        this.#dataSourceSelectNode.value = MANUAL_DATA_SOURCE;
+        this.#refreshRowControls();
+    }
+
+    #replaceRows(labels, values) {
+        this.#rowsNode.replaceChildren();
+        labels.forEach((label, pointIndex) => this.#addRow(label, values[pointIndex]));
     }
 
     #createActions() {
@@ -124,13 +217,19 @@ export class ChartEditorDialog {
 
     #refreshRowControls() {
         const rowNodes = [...this.#rowsNode.children];
-        this.#addRowButtonNode.disabled = rowNodes.length >= MAXIMUM_ROW_COUNT;
+        const isLinked = this.#linkedDataSource !== null;
+        this.#addRowButtonNode.disabled = isLinked || rowNodes.length >= MAXIMUM_ROW_COUNT;
+        this.#dataSourceHintNode.hidden = !isLinked;
         for (const rowNode of rowNodes) {
-            rowNode.querySelector('button').disabled = rowNodes.length <= MINIMUM_ROW_COUNT;
+            rowNode.querySelector('button').disabled = isLinked || rowNodes.length <= MINIMUM_ROW_COUNT;
+            for (const inputNode of rowNode.querySelectorAll('input')) {
+                inputNode.readOnly = isLinked;
+            }
         }
     }
 
     #generateRandomData() {
+        this.#switchToManualData();
         const pointCount = this.#rowsNode.children.length;
         const { labels, values } = DummyDataGenerator.generateSeries({ pointCount });
         [...this.#rowsNode.children].forEach((rowNode, rowIndex) => {
@@ -166,11 +265,15 @@ export class ChartEditorDialog {
             values.push(value);
         }
         this.#errorNode.textContent = '';
-        return {
+        const content = {
             chartType: this.#formNode.elements.chartType.value,
             title: this.#formNode.elements.title.value,
             labels,
             values,
         };
+        if (this.#linkedDataSource !== null) {
+            content.dataSource = this.#linkedDataSource;
+        }
+        return content;
     }
 }

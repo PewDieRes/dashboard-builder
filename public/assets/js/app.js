@@ -40,12 +40,12 @@ async function resolveInitialDashboardId(toolbar, apiClient) {
     return (requestedDashboard ?? dashboards[0])?.id;
 }
 
-function createRendererRegistry() {
+function createRendererRegistry(apiClient) {
     const rendererRegistry = new ElementRendererRegistry();
     const richTextToolbar = new RichTextToolbar(document.querySelector('.rich-text-toolbar'));
     rendererRegistry.register('text', new TextElementRenderer(richTextToolbar));
     rendererRegistry.register('image', new ImageElementRenderer());
-    const chartEditorDialog = new ChartEditorDialog(document.querySelector('#chart-editor-dialog'));
+    const chartEditorDialog = new ChartEditorDialog(document.querySelector('#chart-editor-dialog'), apiClient);
     rendererRegistry.register('chart', new ChartElementRenderer(chartEditorDialog));
     return rendererRegistry;
 }
@@ -54,7 +54,7 @@ async function startApplication() {
     const apiClient = new DashboardApiClient();
     const layoutStore = new LayoutStore();
     const notifier = new Notifier(document.querySelector('#toast-region'));
-    const rendererRegistry = createRendererRegistry();
+    const rendererRegistry = createRendererRegistry(apiClient);
     const dragResizeController = new DragResizeController(layoutStore);
 
     new DashboardCanvas(document.querySelector('#dashboard-canvas'), {

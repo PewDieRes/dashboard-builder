@@ -19,10 +19,16 @@ export class ChartElementRenderer {
             text: 'Edit chart',
             attributes: { type: 'button' },
         });
-        const wrapperNode = createNode('div', { className: 'chart-element' }, [editButtonNode, canvasHolderNode]);
+        const liveBadgeNode = createNode('span', { className: 'chart-live-badge', text: 'Live' });
+        liveBadgeNode.hidden = !element.content.dataSource;
+        const wrapperNode = createNode('div', { className: 'chart-element' }, [liveBadgeNode, editButtonNode, canvasHolderNode]);
         containerNode.append(wrapperNode);
 
-        const chartHandle = { chart: this.#createChart(canvasNode, element.content) };
+        const chartHandle = {
+            chart: this.#createChart(canvasNode, element.content),
+            liveBadgeNode,
+            isDestroyed: false,
+        };
         const resizeObserver = new ResizeObserver(() => chartHandle.chart.resize());
         resizeObserver.observe(canvasHolderNode);
 
@@ -30,7 +36,12 @@ export class ChartElementRenderer {
         editButtonNode.addEventListener('click', openEditor);
         wrapperNode.addEventListener('dblclick', openEditor);
 
+        if (element.content.dataSource) {
+            this.#loadLiveData(chartHandle, element, context);
+        }
+
         return () => {
+            chartHandle.isDestroyed = true;
             resizeObserver.disconnect();
             chartHandle.chart.destroy();
         };
@@ -47,12 +58,46 @@ export class ChartElementRenderer {
         });
     }
 
+    async #loadLiveData(chartHandle, element, context) {
+        const requestedDataSource = element.content.dataSource;
+        let metric;
+        try {
+            metric = await context.apiClient.getMetric(requestedDataSource);
+        } catch (error) {
+            if (!chartHandle.isDestroyed) {
+                context.notifier.error(`Could not load live chart data: ${error.message}`);
+            }
+            return;
+        }
+        if (chartHandle.isDestroyed || element.content.dataSource !== requestedDataSource) {
+            return;
+        }
+        this.#applyLiveSeries(chartHandle, element, context, metric);
+    }
+
+    #applyLiveSeries(chartHandle, element, context, metric) {
+        const { labels, values } = element.content;
+        if (JSON.stringify(labels) === JSON.stringify(metric.labels)
+            && JSON.stringify(values) === JSON.stringify(metric.values)) {
+            return;
+        }
+        const liveContent = { ...element.content, labels: metric.labels, values: metric.values };
+        context.layoutStore.updateElement(
+            context.sectionClientId,
+            context.elementClientId,
+            { content: liveContent },
+            'content',
+        );
+        this.#updateChartInPlace(chartHandle.chart, liveContent);
+    }
+
     async #editContent(chartHandle, canvasNode, element, context) {
         const newContent = await this.#chartEditorDialog.open(element.content);
         if (!newContent) {
             return;
         }
         const previousChartType = element.content.chartType;
+        chartHandle.liveBadgeNode.hidden = !newContent.dataSource;
         context.layoutStore.updateElement(
             context.sectionClientId,
             context.elementClientId,
