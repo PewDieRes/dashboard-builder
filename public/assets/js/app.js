@@ -1,10 +1,12 @@
 import { DashboardApiClient } from './api/DashboardApiClient.js';
 import { DashboardCanvas } from './canvas/DashboardCanvas.js';
 import { ElementRendererRegistry } from './elements/ElementRendererRegistry.js';
+import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
 import { LayoutStore } from './state/LayoutStore.js';
 import { Notifier } from './ui/Notifier.js';
+import { RichTextToolbar } from './ui/RichTextToolbar.js';
 import { Toolbar } from './ui/Toolbar.js';
 
 const COMPACT_VIEWPORT_QUERY = '(max-width: 767px)';
@@ -35,11 +37,18 @@ async function resolveInitialDashboardId(toolbar, apiClient) {
     return (requestedDashboard ?? dashboards[0])?.id;
 }
 
+function createRendererRegistry() {
+    const rendererRegistry = new ElementRendererRegistry();
+    const richTextToolbar = new RichTextToolbar(document.querySelector('.rich-text-toolbar'));
+    rendererRegistry.register('text', new TextElementRenderer(richTextToolbar));
+    return rendererRegistry;
+}
+
 async function startApplication() {
     const apiClient = new DashboardApiClient();
     const layoutStore = new LayoutStore();
     const notifier = new Notifier(document.querySelector('#toast-region'));
-    const rendererRegistry = new ElementRendererRegistry();
+    const rendererRegistry = createRendererRegistry();
     const dragResizeController = new DragResizeController(layoutStore);
 
     new DashboardCanvas(document.querySelector('#dashboard-canvas'), {
