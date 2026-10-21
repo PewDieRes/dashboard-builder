@@ -77,23 +77,9 @@ export class ChartElementRenderer {
         if (chartHandle.isDestroyed || element.content.dataSource !== requestedDataSource) {
             return;
         }
-        this.#applyLiveSeries(chartHandle, element, context, metric);
-    }
-
-    #applyLiveSeries(chartHandle, element, context, metric) {
-        const { labels, values } = element.content;
-        if (JSON.stringify(labels) === JSON.stringify(metric.labels)
-            && JSON.stringify(values) === JSON.stringify(metric.values)) {
-            return;
-        }
-        const liveContent = { ...element.content, labels: metric.labels, values: metric.values };
-        context.layoutStore.updateElement(
-            context.sectionClientId,
-            context.elementClientId,
-            { content: liveContent },
-            'content',
-        );
-        this.#updateChartInPlace(chartHandle.chart, liveContent);
+        // Live series are display-only; the stored labels and values stay as the fallback snapshot, so viewing a
+        // dashboard never counts as an edit.
+        this.#updateChartInPlace(chartHandle.chart, { ...element.content, labels: metric.labels, values: metric.values });
     }
 
     async #editContent(element, context) {
