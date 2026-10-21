@@ -84,14 +84,26 @@ uploaded images live on the container disk, so they are lost on redeploy.
 
 ## Using the builder
 
-1. **Add section** places a new section below the existing ones. Drag it by its header; resize from its right or bottom edge.
-2. Click a section to select it, then use **Add text**, **Add image** or **Add chart**.
-3. Drag an element by its handle (the ☰ pill that appears on hover, top-left); resize from any edge or corner.
-4. Text: click into the text and type. Select some text, then use the formatting bar that appears while the
-   text is focused: **B** (bold), **I** (italic) or the **Size** dropdown (font size).
-5. Image: **Replace** uploads a new image.
-6. Chart: **Edit chart** (or double-click) to change type, title and data, or press **Generate random data**.
-   Pick a **Data source** to link the chart to a live server metric (it shows a **Live** badge); choose **Manual data** to edit the values yourself again.
+The editor has three panes: a top bar, a left sidebar (**Add** and **Layers** tabs), the canvas in the middle and an
+inspector on the right.
+
+1. **Top bar:** pick or create a dashboard, rename it, switch the canvas between **Desktop**, **Tablet** and **Mobile**
+   widths, watch the save status, press **Save**, or toggle **Preview**.
+2. **Add tab:** click a card (**Section**, **Text**, **Image**, **Bar chart**, **Line chart**). Elements go into the
+   selected section; with no section selected a new one is created first.
+3. **Layers tab:** a tree of sections and their elements. Click a row to select it; it stays in sync with the canvas.
+4. **Canvas:** drag a section by its header and resize it from its right or bottom edge. Drag an element by its type
+   chip (top-left of the selection) and resize it from any edge or corner. Press `Delete` to remove the selection and
+   `Escape` to clear it.
+5. **Inspector:** shows the selection. Nothing selected: dashboard name and counts. Section: title, column, row,
+   columns and height in rows. Element: position and size in percent, bring forward or send backward, delete, then
+   type-specific controls:
+   - Text: **Bold**, **Italic** and **Font size** while the text is focused.
+   - Image: thumbnail, **Replace** and alt text.
+   - Chart: bar or line type, title, **Data source** (a live server metric shows a **Live** badge, **Manual data**
+     lets you edit values), **Edit data** and **Generate random data**.
+6. **Preview** hides the sidebars and all editing chrome and blocks dragging and text editing; toggle it again to edit.
+   Tablet and Mobile modes (and viewports under 768px) stack the sections and are view-only for layout.
 7. Changes save automatically; reload the page to see the layout restored from MySQL.
 
 ## API
