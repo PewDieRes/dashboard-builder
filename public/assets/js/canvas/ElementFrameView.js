@@ -1,5 +1,7 @@
 import { createNode } from '../dom/createNode.js';
+import { ELEMENT_TYPE_LABELS } from '../elements/elementTypeLabels.js';
 import { applyBoxStyle } from './elementBoxStyle.js';
+import { createSelectionHandleNodes } from './selectionHandles.js';
 
 export class ElementFrameView {
     #layoutStore;
@@ -19,8 +21,8 @@ export class ElementFrameView {
     /** Returns the frame node and a destroy function that releases renderer and interaction resources. */
     render(sectionClientId, element, sectionBodyNode) {
         const dragHandleNode = createNode('span', {
-            className: 'element-drag-handle',
-            text: '☰',
+            className: 'element-drag-handle selection-chip',
+            text: ELEMENT_TYPE_LABELS[element.elementType],
             attributes: { title: 'Drag to move', 'aria-label': 'Drag handle' },
         });
         const deleteButtonNode = createNode('button', {
@@ -32,7 +34,7 @@ export class ElementFrameView {
         const frameNode = createNode('div', {
             className: 'element-frame',
             attributes: { 'data-element-id': element.clientId },
-        }, [dragHandleNode, deleteButtonNode, contentNode]);
+        }, [dragHandleNode, deleteButtonNode, contentNode, ...createSelectionHandleNodes()]);
 
         applyBoxStyle(frameNode, element);
         frameNode.style.zIndex = String(element.zIndex);

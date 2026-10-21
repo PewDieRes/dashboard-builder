@@ -6,8 +6,10 @@ import { ImageElementRenderer } from './elements/ImageElementRenderer.js';
 import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
+import { createNode } from './dom/createNode.js';
 import { LayoutStore } from './state/LayoutStore.js';
 import { ChartEditorDialog } from './ui/ChartEditorDialog.js';
+import { FrameLabel } from './ui/FrameLabel.js';
 import { Notifier } from './ui/Notifier.js';
 import { RichTextToolbar } from './ui/RichTextToolbar.js';
 import { Toolbar } from './ui/Toolbar.js';
@@ -42,7 +44,9 @@ async function resolveInitialDashboardId(toolbar, apiClient) {
 
 function createRendererRegistry(apiClient) {
     const rendererRegistry = new ElementRendererRegistry();
-    const richTextToolbar = new RichTextToolbar(document.querySelector('.rich-text-toolbar'));
+    const richTextToolbarNode = createNode('div', { className: 'rich-text-toolbar', attributes: { hidden: '' } });
+    document.body.append(richTextToolbarNode);
+    const richTextToolbar = new RichTextToolbar(richTextToolbarNode);
     rendererRegistry.register('text', new TextElementRenderer(richTextToolbar));
     rendererRegistry.register('image', new ImageElementRenderer());
     const chartEditorDialog = new ChartEditorDialog(document.querySelector('#chart-editor-dialog'), apiClient);
@@ -57,7 +61,9 @@ async function startApplication() {
     const rendererRegistry = createRendererRegistry(apiClient);
     const dragResizeController = new DragResizeController(layoutStore);
 
+    new FrameLabel(document.querySelector('#frame-label'), layoutStore);
     new DashboardCanvas(document.querySelector('#dashboard-canvas'), {
+        workspaceNode: document.querySelector('#workspace'),
         layoutStore,
         rendererRegistry,
         dragResizeController,
@@ -70,7 +76,7 @@ async function startApplication() {
         notifier,
         onStatusChange: status => toolbar.showSaveStatus(status),
     });
-    toolbar = new Toolbar(document.querySelector('.toolbar'), {
+    toolbar = new Toolbar(document.querySelector('.topbar'), {
         layoutStore,
         apiClient,
         notifier,

@@ -1,6 +1,3 @@
-import { createDefaultElement } from '../elements/elementDefaults.js';
-import { findNextFreeRow } from '../interaction/geometry.js';
-
 const SAVE_STATUS_LABELS = {
     saved: 'Saved',
     saving: 'Saving...',
@@ -17,8 +14,6 @@ export class Toolbar {
     #onSaveRequested;
     #dashboardSelectNode;
     #dashboardNameInputNode;
-    #addSectionButtonNode;
-    #addElementButtonNodes;
     #saveStatusNode;
 
     constructor(rootNode, { layoutStore, apiClient, notifier, onDashboardChange, onSaveRequested = async () => true }) {
@@ -29,8 +24,6 @@ export class Toolbar {
         this.#onSaveRequested = onSaveRequested;
         this.#dashboardSelectNode = rootNode.querySelector('#dashboard-select');
         this.#dashboardNameInputNode = rootNode.querySelector('#dashboard-name-input');
-        this.#addSectionButtonNode = rootNode.querySelector('#add-section-button');
-        this.#addElementButtonNodes = [...rootNode.querySelectorAll('[data-element-type]')];
         this.#saveStatusNode = rootNode.querySelector('#save-status');
         this.#bindEvents(rootNode);
         this.#refreshControlAvailability();
@@ -70,10 +63,6 @@ export class Toolbar {
         this.#dashboardNameInputNode.addEventListener('input', () => {
             this.#layoutStore.renameDashboard(this.#dashboardNameInputNode.value);
         });
-        this.#addSectionButtonNode.addEventListener('click', () => this.#addSection());
-        for (const buttonNode of this.#addElementButtonNodes) {
-            buttonNode.addEventListener('click', () => this.#addElement(buttonNode.dataset.elementType));
-        }
         rootNode.querySelector('#save-button').addEventListener('click', () => this.#onSaveRequested());
         this.#layoutStore.addEventListener('change', event => this.#handleStoreChange(event.detail.reason));
     }
@@ -98,13 +87,7 @@ export class Toolbar {
     }
 
     #refreshControlAvailability() {
-        const hasDashboard = this.#layoutStore.getDashboardId() !== null;
-        const hasSelectedSection = this.#layoutStore.getSelection().sectionClientId !== null;
-        this.#addSectionButtonNode.disabled = !hasDashboard;
-        this.#dashboardNameInputNode.disabled = !hasDashboard;
-        for (const buttonNode of this.#addElementButtonNodes) {
-            buttonNode.disabled = !hasSelectedSection;
-        }
+        this.#dashboardNameInputNode.disabled = this.#layoutStore.getDashboardId() === null;
     }
 
     #renderDashboardOptions(dashboards) {
@@ -138,23 +121,5 @@ export class Toolbar {
         } catch (error) {
             this.#notifier.error(error.message);
         }
-    }
-
-    #addSection() {
-        const sectionClientId = this.#layoutStore.addSection({
-            title: 'New section',
-            gridColumn: 1,
-            gridRow: findNextFreeRow(this.#layoutStore.getSections()),
-            columnSpan: 6,
-            rowSpan: 24,
-            elements: [],
-        });
-        this.#layoutStore.select(sectionClientId);
-    }
-
-    #addElement(elementType) {
-        const { sectionClientId } = this.#layoutStore.getSelection();
-        const elementClientId = this.#layoutStore.addElement(sectionClientId, createDefaultElement(elementType));
-        this.#layoutStore.select(sectionClientId, elementClientId);
     }
 }

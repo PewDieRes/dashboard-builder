@@ -4,41 +4,42 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dashboard Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="/assets/css/app.css">
     <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.27/dist/interact.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <header class="toolbar">
-        <div class="toolbar-brand">Dashboard Builder</div>
-
-        <div class="toolbar-group">
+    <header class="topbar">
+        <div class="topbar-group topbar-start">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Dashboard Builder</span></div>
             <label class="visually-hidden" for="dashboard-select">Dashboard</label>
-            <select id="dashboard-select" class="toolbar-select"></select>
-            <button type="button" id="new-dashboard-button" class="button">New dashboard</button>
-        </div>
-
-        <div class="toolbar-group">
+            <select id="dashboard-select" class="control topbar-select"></select>
+            <button type="button" id="new-dashboard-button" class="button" aria-label="New dashboard">New</button>
             <label class="visually-hidden" for="dashboard-name-input">Dashboard name</label>
-            <input type="text" id="dashboard-name-input" class="toolbar-name-input" maxlength="120" placeholder="Dashboard name">
+            <input type="text" id="dashboard-name-input" class="control topbar-name-input" maxlength="120" placeholder="Dashboard name">
         </div>
 
-        <div class="toolbar-group">
-            <button type="button" id="add-section-button" class="button button-primary">Add section</button>
-            <button type="button" class="button" data-element-type="text">Add text</button>
-            <button type="button" class="button" data-element-type="image">Add image</button>
-            <button type="button" class="button" data-element-type="chart">Add chart</button>
-        </div>
+        <div class="topbar-group topbar-center"></div>
 
-        <div class="toolbar-group toolbar-end">
+        <div class="topbar-group topbar-end">
             <span id="save-status" class="save-status" data-status="saved" role="status">Saved</span>
             <button type="button" id="save-button" class="button">Save</button>
         </div>
     </header>
 
-    <div class="rich-text-toolbar" hidden></div>
+    <div class="editor-body">
+        <aside id="sidebar" class="sidebar" aria-label="Add elements and layers"></aside>
 
-    <main id="dashboard-canvas"></main>
+        <main id="workspace" class="workspace">
+            <p id="frame-label" class="frame-label"></p>
+            <div id="dashboard-canvas" class="dashboard-frame"></div>
+        </main>
+
+        <aside id="inspector" class="inspector" aria-label="Inspector"></aside>
+    </div>
 
     <div id="toast-region" class="toast-region"></div>
 

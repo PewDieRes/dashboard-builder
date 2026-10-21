@@ -1,5 +1,7 @@
 import { createNode } from '../dom/createNode.js';
+import { SECTION_LABEL } from '../elements/elementTypeLabels.js';
 import { ElementFrameView } from './ElementFrameView.js';
+import { createSelectionHandleNodes } from './selectionHandles.js';
 
 export class SectionView {
     #layoutStore;
@@ -35,14 +37,11 @@ export class SectionView {
             deleteButtonNode,
         ]);
         const bodyNode = createNode('div', { className: 'section-body' });
-        const resizeGripNode = createNode('span', {
-            className: 'section-resize-grip',
-            attributes: { 'aria-hidden': 'true' },
-        });
+        const selectionChipNode = createNode('span', { className: 'selection-chip', text: SECTION_LABEL });
         const sectionNode = createNode('section', {
             className: 'section',
             attributes: { 'data-section-id': section.clientId },
-        }, [headerNode, bodyNode, resizeGripNode]);
+        }, [headerNode, bodyNode, selectionChipNode, ...createSelectionHandleNodes()]);
 
         this.applyPlacement(sectionNode, section);
         this.#bindSectionEvents(sectionNode, section, titleInputNode, deleteButtonNode);

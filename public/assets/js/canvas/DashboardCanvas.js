@@ -9,14 +9,18 @@ export class DashboardCanvas {
     #destroyCallbacks = [];
     #sectionNodes = new Map();
     #gridNode = null;
+    #workspaceNode;
 
-    constructor(rootNode, { layoutStore, rendererRegistry, dragResizeController, apiClient, notifier }) {
+    constructor(rootNode, { workspaceNode, layoutStore, rendererRegistry, dragResizeController, apiClient, notifier }) {
         this.#rootNode = rootNode;
+        this.#workspaceNode = workspaceNode;
         this.#layoutStore = layoutStore;
         this.#dragResizeController = dragResizeController;
         this.#sectionView = new SectionView({ layoutStore, rendererRegistry, dragResizeController, apiClient, notifier });
         layoutStore.addEventListener('change', event => this.#handleChange(event.detail.reason));
-        this.#rootNode.addEventListener('pointerdown', event => this.#clearSelectionOnBackgroundPress(event));
+        for (const pressableNode of [rootNode, workspaceNode]) {
+            pressableNode.addEventListener('pointerdown', event => this.#clearSelectionOnBackgroundPress(event));
+        }
         // The first 'load' change replaces this; rendering the empty store would flash "No sections yet".
         this.#rootNode.replaceChildren(createNode('p', { className: 'canvas-empty-state', text: 'Loading dashboard…' }));
     }
@@ -51,13 +55,14 @@ export class DashboardCanvas {
         if (this.#sectionNodes.size > 0) {
             return [];
         }
-        return [createNode('p', { className: 'canvas-empty-state', text: 'No sections yet. Use "Add section" to start building.' })];
+        return [createNode('p', { className: 'canvas-empty-state', text: 'No sections yet. Use the Add panel to start building.' })];
     }
 
     #applySelection() {
         const { sectionClientId, elementClientId } = this.#layoutStore.getSelection();
         for (const sectionNode of this.#rootNode.querySelectorAll('[data-section-id]')) {
-            sectionNode.classList.toggle('is-selected', sectionNode.dataset.sectionId === sectionClientId);
+            const isSectionSelected = sectionNode.dataset.sectionId === sectionClientId && elementClientId === null;
+            sectionNode.classList.toggle('is-selected', isSectionSelected);
         }
         for (const frameNode of this.#rootNode.querySelectorAll('[data-element-id]')) {
             frameNode.classList.toggle('is-selected', frameNode.dataset.elementId === elementClientId);
@@ -71,7 +76,8 @@ export class DashboardCanvas {
     }
 
     #clearSelectionOnBackgroundPress(event) {
-        if (event.target === this.#rootNode || event.target === this.#gridNode) {
+        const backgroundNodes = [this.#rootNode, this.#gridNode, this.#workspaceNode];
+        if (backgroundNodes.includes(event.target)) {
             this.#layoutStore.select(null);
         }
     }
