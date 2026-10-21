@@ -1,0 +1,11 @@
+{
+  "name": "dashboard-builder-e2e",
+  "private": true,
+  "description": "Browser end-to-end tests for the dashboard builder",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

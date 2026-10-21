@@ -3,3 +3,6 @@
 public/uploads/*
 !public/uploads/.gitkeep
 .phpunit.cache/
+/node_modules/
+/test-results/
+/playwright-report/
