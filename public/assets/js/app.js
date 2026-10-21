@@ -1,6 +1,7 @@
 import { DashboardApiClient } from './api/DashboardApiClient.js';
 import { DashboardCanvas } from './canvas/DashboardCanvas.js';
 import { ElementRendererRegistry } from './elements/ElementRendererRegistry.js';
+import { ImageElementRenderer } from './elements/ImageElementRenderer.js';
 import { TextElementRenderer } from './elements/TextElementRenderer.js';
 import { DragResizeController } from './interaction/DragResizeController.js';
 import { AutosaveScheduler } from './persistence/AutosaveScheduler.js';
@@ -41,6 +42,7 @@ function createRendererRegistry() {
     const rendererRegistry = new ElementRendererRegistry();
     const richTextToolbar = new RichTextToolbar(document.querySelector('.rich-text-toolbar'));
     rendererRegistry.register('text', new TextElementRenderer(richTextToolbar));
+    rendererRegistry.register('image', new ImageElementRenderer());
     return rendererRegistry;
 }
 
